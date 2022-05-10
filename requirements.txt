@@ -1,0 +1,12 @@
+numpy
+matplotlib
+cython
+pyyaml
+mypy
+botorch
+glfw
+gpytorch
+gym
+mujoco-py
+torch
+torchvision
