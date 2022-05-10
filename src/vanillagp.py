@@ -25,8 +25,8 @@ def step(model,objective_env):
       acq_function=EI,
       bounds=torch.tensor([[0.0] * len_params, [1.0] * len_params]),
       q=1,
-      num_restarts=20,
-      raw_samples=100,
+      num_restarts=3,
+      raw_samples=5,
       options={},
     )
 
