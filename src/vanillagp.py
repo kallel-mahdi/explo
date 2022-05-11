@@ -30,7 +30,7 @@ def step(model,objective_env):
     )
 
     new_y = objective_env(new_x)
-    logger.warning(f'new_x.requires_grad {new_x.requires_grad}')
+    #logger.warning(f'new_x.requires_grad {new_x.requires_grad}')
     ### Update training points.
     train_x = torch.cat([model.train_inputs[0], new_x])
     train_y = torch.cat([model.train_targets, new_y])

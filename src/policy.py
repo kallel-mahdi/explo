@@ -4,25 +4,68 @@ from copy import deepcopy
 from itertools import chain
 import torch
 
-class MLP:
-    """Multilayer perceptrone.
+class MyMLP(torch.nn.Module):
 
-    Consists of at least two layers of nodes: an input layer and an output
-    layer. Optionally one can extend it with arbitrary many hidden layers.
-    Except for the input nodes, each node is a neuron that can optionally use a
-    nonlinear activation function.
+    def __init__(
+                self,
+                Ls: List[int],
+                params,
+                add_bias: bool = False,
+                nonlinearity: Optional[Callable] = None,
+                ):
+        
+        """Inits MLP with the provided weights 
+        Note the MLP can support batches of weights """
+        
+        super(MyMLP, self).__init__()
+        
+        print(f'MyMLP received params with shape',params.shape)
+        self.params = params
+        self.weight_sizes  = [(in_size,out_size)
+                                for in_size, out_size in zip(Ls[:-1], Ls[1:])]
+        self.len_params = sum(
+            [
+                (in_size + 1 * add_bias) * out_size
+                for in_size, out_size in zip(Ls[:-1], Ls[1:])
+            ]
+        )
+    
+    def create_weights(self,params):
+        
+        weights = []
+        start,end = (0,0)
+        
+        for (in_size,out_size) in self.weight_sizes:
+            
+            start = end
+            end   = start  + (in_size * out_size)
+            end   = start + in_size * out_size        
+            
+            
+            #print("MyMLP params size",params[...,start:end].shape)
+            weight = params[...,start:end].reshape(*params.shape[:-1],out_size,in_size)
+            print("MyMLP weight size",weight.shape)
+            #weight = params[...,start:end].reshape(out_size,in_size)
+            weights.append(weight) ## add transpose or dim error
+        
+        return weights
+        
+        
+    def forward(self,states):
 
-    Attributes:
-        L0: Number of input nodes. For a gym environment objective this
-            corresponds to the states.
-        Ls: List of numbers for nodes of optional hidden layers and the output
-            layer. For a gym environment objective the last number of the list
-            has to correspond to the actions.
-        add_bias: If True every layer has one bias vector of the same dimension
-            as the output dimension of the layer.
-        nonlinearity: Opportunity to hand over a nonlinearity function.
-    """
+        weights = self.create_weights(self.params)
+        output = states
+        
+        for w in weights:
+            print(f'forward: states.shape {output.shape} params_batch.shape {w.shape}')
+            #output = output @ w
+            output = w@ output.T
+        
+        print(f'forward: output.shape {output.shape}')
+        return output
 
+class MyMLP2(torch.nn.Module):
+    
     def __init__(
                 self,
                 Ls: List[int],
@@ -30,83 +73,45 @@ class MLP:
                 nonlinearity: Optional[Callable] = None,
                 ):
         
-        """Inits MLP."""
-
-        self.Ls = Ls
-        self.add_bias = add_bias
+        """Inits MLP with the provided weights 
+        Note the MLP can support batches of weights """
+        
+        super(MyMLP2, self).__init__()
+        
         self.weight_sizes  = [(in_size,out_size)
                                 for in_size, out_size in zip(Ls[:-1], Ls[1:])]
-        if self.add_bias :
-            
-            self.bias_sizes = [(out_size)
-                                for  out_size in Ls[1:]  ]
-        
         self.len_params = sum(
             [
                 (in_size + 1 * add_bias) * out_size
                 for in_size, out_size in zip(Ls[:-1], Ls[1:])
             ]
         )
-        
-        if nonlinearity is None: 
-            self.nonlinearity = Identity
     
-    def reset_weights(self,net,params):
+    def create_weights(self,params):
         
+        weights = []
         start,end = (0,0)
         
-        for layer,(in_size,out_size) in zip(net,self.weight_sizes):
+        for (in_size,out_size) in self.weight_sizes:
             
             start = end
             end   = start  + (in_size * out_size)
             end   = start + in_size * out_size        
             
-            weight_params = params[start:end].reshape(out_size,in_size)
-            layer.weight.data = weight_params
+            weight = params[...,start:end].reshape(*params.shape[:-1],out_size,in_size)
+            weights.append(weight.T) ## add transpose or dim error
             
-            if self.add_bias : 
-                
-                bias_params = params[end: end+ out_size].reshape(out_size)
-                end = end + out_size
-                layer.bias.data = bias_params
+        return weights
         
-        return net 
-    
-    def build_net(self):
         
-        ### initialize deep layers
-        layer_list = [ [Linear(in_size,out_size,bias=self.add_bias),self.nonlinearity]
-                        for (in_size,out_size) in self.weight_sizes[:-1]]
-        
-        ### last layer has no nonlinearity
-        layer_list.append([Linear(*self.weight_sizes[-1],bias=self.add_bias)])
-        
-        ### initialize model
-        net = Sequential(*chain(*layer_list))
-        self.net = deepcopy(net)##tmp
-        
-        return net
+    def forward(self,params,states):
 
+        weights = self.create_weights(params)
         
-    def __call__(self,states,params):
+        output = states
+        for w in weights:
+            output = output @ w
         
-        
-        ### we initialize network at each call (maybe reset network in future)
-        net = self.build_net()
-        #############
-        net = self.reset_weights(net,params)
-        self.updated_net = deepcopy(net)##tmp
-        rslt = net(states)
-        
-        return rslt
-    
-    
-    
-if __name__ == "__main__":
-    
-    mlp = MLP([8,2],add_bias=True)
-    params = torch.rand(mlp.len_params)
-    states = torch.rand(10,5,8)
-    mlp(states,params).size()
+        return output
 
-        
+
