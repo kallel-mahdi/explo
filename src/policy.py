@@ -1,7 +1,7 @@
+from torch.nn import Linear,Sequential,Identity
 from typing import Tuple, List, Callable, Union, Optional
-
+from itertools import chain
 import torch
-
 
 class MLP:
     """Multilayer perceptrone.
@@ -23,58 +23,87 @@ class MLP:
     """
 
     def __init__(
-        self,
-        L0: int,
-        *Ls: List[int],
-        add_bias: bool = False,
-        nonlinearity: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
-    ):
+                self,
+                Ls: List[int],
+                add_bias: bool = False,
+                nonlinearity: Optional[Callable] = None,
+                ):
+        
         """Inits MLP."""
-        self.L0 = L0
+
         self.Ls = Ls
         self.add_bias = add_bias
+        self.weight_sizes  = [(in_size,out_size)
+                                for in_size, out_size in zip(Ls[:-1], Ls[1:])]
+        if self.add_bias :
+            
+            self.bias_sizes = [(out_size)
+                                for  out_size in Ls[1:]  ]
+        
         self.len_params = sum(
             [
                 (in_size + 1 * add_bias) * out_size
-                for in_size, out_size in zip((L0,) + Ls[:-1], Ls)
+                for in_size, out_size in zip(Ls[:-1], Ls[1:])
             ]
         )
+        
+        if nonlinearity is None: 
+            self.nonlinearity = Identity
+    
+    def reset_weights(self,net,params):
+        
+        start,end = (0,0)
+        
+        for layer,(in_size,out_size) in zip(net,self.weight_sizes):
+            
+            start = end
+            end   = start  + (in_size * out_size)
+            end   = start + in_size * out_size        
+            
+            weight_params = params[start:end].reshape(out_size,in_size)
+            layer.weight.data = weight_params
+            
+            if self.add_bias : 
+                
+                bias_params = params[end: end+ out_size].reshape(out_size)
+                end = end + out_size
+                layer.bias.data = bias_params
+        
+        return net 
+    
+    def build_net(self):
+        
+        ### initialize deep layers
+        layer_list = [ [Linear(in_size,out_size,bias=self.add_bias),self.nonlinearity]
+                        for (in_size,out_size) in self.weight_sizes[:-1]]
+        
+        ### last layer has no nonlinearity
+        layer_list.append([Linear(*self.weight_sizes[-1],bias=self.add_bias)])
+        
+        ### initialize model
+        net = Sequential(*chain(*layer_list))
+        
+        return net
 
-        if nonlinearity is None:
-            nonlinearity = lambda x: x
-        self.nonlinearity = nonlinearity
-
-    def __call__(self, state: torch.Tensor, params: torch.Tensor) -> torch.Tensor:
-        """Maps states and parameters of MLP to its actions.
-
-        Args:
-            state: The state tensor.
-            params: Parameters of the MLP.
-
-        Returns:
-            Output of the MLP/actions.
-        """
-        with torch.no_grad():
-            params = params.view(self.len_params)
-            out = state
-            start, end = (0, 0)
-            in_size = self.L0
-            for out_size in self.Ls:
-                # Linear mapping.
-                start, end = end, end + in_size * out_size
-                out = out @ params[start:end].view(in_size, out_size)
-                # Add bias.
-                if self.add_bias:
-                    start, end = end, end + out_size
-                    out = out + params[start:end]
-                # Apply nonlinearity.
-                out = self.nonlinearity(out)
-                in_size = out_size
-        return out
-
-
-
+        
+    def __call__(self,states,params):
+        
+        
+        ### we initialize network at each call (maybe reset network in future)
+        net = self.build_net()
+        #############
+        net = self.reset_weights(net,params)
+        rslt = net(states)
+        
+        return rslt
+    
+    
+    
 if __name__ == "__main__":
     
-    mlp = MLP(*[8,2])
-    mlp.len_params
+    mlp = MLP([8,2],add_bias=True)
+    params = torch.rand(mlp.len_params)
+    states = torch.rand(10,5,8)
+    mlp(states,params).size()
+
+        

@@ -16,7 +16,6 @@ def step(model,objective_env):
     fit_gpytorch_model(mll)
 
     ### optimize acqf
-    
     best_value = model.train_targets.max()
     len_params = objective_env.policy.len_params
     EI = ExpectedImprovement(model=model, best_f=best_value)
@@ -25,8 +24,8 @@ def step(model,objective_env):
       acq_function=EI,
       bounds=torch.tensor([[0.0] * len_params, [1.0] * len_params]),
       q=1,
-      num_restarts=5,
-      raw_samples=7,
+      num_restarts=1,
+      raw_samples=1,
       options={},
     )
 

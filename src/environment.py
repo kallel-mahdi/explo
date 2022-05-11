@@ -118,7 +118,7 @@ class EnvironmentObjective:
         states[0] = self.manipulate_state(self.env.reset())
         for t in range(self.max_steps):  # rollout
             actions[t] = self.policy(states[t], params)
-            state, rewards[t], done, _ = self.env.step(actions[t].numpy())
+            state, rewards[t], done, _ = self.env.step(actions[t].detach().numpy())
             states[t + 1] = self.manipulate_state(state)
             r += self.manipulate_reward(
                 rewards[t], actions[t], states[t + 1], done
