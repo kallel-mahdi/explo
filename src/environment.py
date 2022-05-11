@@ -158,14 +158,7 @@ class EnvironmentObjective:
         
         return grid
     
-        
-            
-            
-            
-            
-            
-        
-        
+
 
     def test_params(
         self,

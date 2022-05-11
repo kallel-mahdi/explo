@@ -1,5 +1,6 @@
 from torch.nn import Linear,Sequential,Identity
 from typing import Tuple, List, Callable, Union, Optional
+from copy import deepcopy
 from itertools import chain
 import torch
 
@@ -82,6 +83,7 @@ class MLP:
         
         ### initialize model
         net = Sequential(*chain(*layer_list))
+        self.net = deepcopy(net)##tmp
         
         return net
 
@@ -93,6 +95,7 @@ class MLP:
         net = self.build_net()
         #############
         net = self.reset_weights(net,params)
+        self.updated_net = deepcopy(net)##tmp
         rslt = net(states)
         
         return rslt
