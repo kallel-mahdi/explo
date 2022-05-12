@@ -11,11 +11,11 @@ from gym import wrappers
 
 class EnvironmentObjective:
     """API for translating an OpenAI gym environment into a black-box objective
-    function for which a parameterized policy should be optimized.
+    function for which a parameterized mlp should be optimized.
 
     Attributes:
         env: OpenAI Gym environment.
-        policy: Parameterized policy that should by optimized for env.
+        mlp: Parameterized mlp that should by optimized for env.
         manipulate_state: Function that manipluates the states of the
             environment.
         manipulate_reward: Function that manipluates the reward of the
@@ -25,13 +25,13 @@ class EnvironmentObjective:
     def __init__(
         self,
         env: gym.Env,
-        policy: Callable,
+        mlp: Callable,
         manipulate_state: Optional[Callable] = None,
         manipulate_reward: Optional[Callable] = None,
     ):
         """Inits the translation environment to objective."""
         self.env = env
-        self.policy = policy
+        self.mlp = mlp
         self.max_steps = env._max_episode_steps
         self.timesteps = 0
         self.timesteps_to_reward = {}
@@ -84,7 +84,7 @@ class EnvironmentObjective:
 
     def get_last_episode(self):
         """Return states, actions and rewards of last episode.
-        Implemented for the implementation of policy gradient methods.
+        Implemented for the implementation of mlp gradient methods.
 
         Returns:
             Dictionary of states, actions and rewards.
@@ -117,7 +117,13 @@ class EnvironmentObjective:
         r = 0
         states[0] = self.manipulate_state(self.env.reset())
         for t in range(self.max_steps):  # rollout
-            actions[t] = self.policy(states[t], params)
+            
+            #### no need for grads here
+            with torch.no_grad():
+                actions[t] = self.mlp(params.unsqueeze(0),states[t].unsqueeze(0),)
+                #actions[t] = self.mlp(states[t], params)
+            ###########################
+            
             state, rewards[t], done, _ = self.env.step(actions[t].detach().numpy())
             states[t + 1] = self.manipulate_state(state)
             r += self.manipulate_reward(
@@ -138,26 +144,22 @@ class EnvironmentObjective:
     
     ######## NEWWWWWWWW ###########
 
-    def get_actions(self,params,states):
-        
-        actions = [self.policy(s, params) for s in states]
-        
-        return torch.stack(actions)
+  
     
-    def get_grid(self,dim_samples=10):
+    def get_grid(self,samples_per_dim=10):
         
         box = self.env.observation_space
         low,high = box.low,box.high
+        print(f'observation box low : {low}/ high {high}')
         state_dims = low.shape[0]
 
-        points = [torch.linspace(low[i],high[i],dim_samples) 
+        points = [torch.linspace(low[i],high[i],samples_per_dim) 
                     for i in range(state_dims)]
         grid = torch.meshgrid(*points)
         grid = torch.stack(grid)
         grid = torch.flatten(grid,start_dim=1).T ## [n_states,state_dim]
         
         return grid
-    
 
 
     def test_params(
@@ -202,7 +204,7 @@ if __name__ == '__main__':
 
     objective_env = EnvironmentObjective(
     env=gym.make("Swimmer-v2"),
-    policy=mlp,
+    mlp=mlp,
     manipulate_state=None,
     manipulate_reward=None,
     )

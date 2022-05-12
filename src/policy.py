@@ -4,12 +4,14 @@ from copy import deepcopy
 from itertools import chain
 import torch
 
-class MyMLP(torch.nn.Module):
+class MLP(torch.nn.Module):
+    
+    """MLP that is differentiable w.r.t to parameters
+    """
 
     def __init__(
                 self,
                 Ls: List[int],
-                params,
                 add_bias: bool = False,
                 nonlinearity: Optional[Callable] = None,
                 ):
@@ -17,101 +19,89 @@ class MyMLP(torch.nn.Module):
         """Inits MLP with the provided weights 
         Note the MLP can support batches of weights """
         
-        super(MyMLP, self).__init__()
+        super(MLP, self).__init__()
         
-        print(f'MyMLP received params with shape',params.shape)
-        self.params = params
-        self.weight_sizes  = [(in_size,out_size)
+        
+            
+        weight_sizes  = [(in_size,out_size)
                                 for in_size, out_size in zip(Ls[:-1], Ls[1:])]
-        self.len_params = sum(
+        n_layers = len(weight_sizes)
+        
+        len_params = sum(
             [
                 (in_size + 1 * add_bias) * out_size
                 for in_size, out_size in zip(Ls[:-1], Ls[1:])
             ]
         )
+        
+        if nonlinearity is None:
+            nonlinearity = torch.nn.ReLU()
+        
+        self.__dict__.update(locals())
+        
     
     def create_weights(self,params):
         
-        weights = []
+        weights,biases = [],[]
+                
         start,end = (0,0)
         
         for (in_size,out_size) in self.weight_sizes:
             
-            start = end
-            end   = start  + (in_size * out_size)
-            end   = start + in_size * out_size        
-            
-            
-            #print("MyMLP params size",params[...,start:end].shape)
+            start = deepcopy(end)
+            end   = deepcopy(start)  + (in_size * out_size)
             weight = params[...,start:end].reshape(*params.shape[:-1],out_size,in_size)
-            print("MyMLP weight size",weight.shape)
-            #weight = params[...,start:end].reshape(out_size,in_size)
+            
+            if self.add_bias:
+                
+                bias = params[...,end:end+out_size].reshape(*params.shape[:-1],out_size)
+                end = deepcopy(end) + out_size
+            
+            else :
+                
+                bias = torch.zeros(*params.shape[:-1],out_size)
+                
             weights.append(weight) ## add transpose or dim error
+            biases.append(bias)
+                
+            #print(f'weight.shape {weight.shape} bias.shape {bias.shape}')
         
-        return weights
-        
-        
-    def forward(self,states):
-
-        weights = self.create_weights(self.params)
-        output = states
-        
-        for w in weights:
-            print(f'forward: states.shape {output.shape} params_batch.shape {w.shape}')
-            #output = output @ w
-            output = w@ output.T
-        
-        print(f'forward: output.shape {output.shape}')
-        return output
-
-class MyMLP2(torch.nn.Module):
-    
-    def __init__(
-                self,
-                Ls: List[int],
-                add_bias: bool = False,
-                nonlinearity: Optional[Callable] = None,
-                ):
-        
-        """Inits MLP with the provided weights 
-        Note the MLP can support batches of weights """
-        
-        super(MyMLP2, self).__init__()
-        
-        self.weight_sizes  = [(in_size,out_size)
-                                for in_size, out_size in zip(Ls[:-1], Ls[1:])]
-        self.len_params = sum(
-            [
-                (in_size + 1 * add_bias) * out_size
-                for in_size, out_size in zip(Ls[:-1], Ls[1:])
-            ]
-        )
-    
-    def create_weights(self,params):
-        
-        weights = []
-        start,end = (0,0)
-        
-        for (in_size,out_size) in self.weight_sizes:
-            
-            start = end
-            end   = start  + (in_size * out_size)
-            end   = start + in_size * out_size        
-            
-            weight = params[...,start:end].reshape(*params.shape[:-1],out_size,in_size)
-            weights.append(weight.T) ## add transpose or dim error
-            
-        return weights
+        return weights,biases
         
         
     def forward(self,params,states):
-
-        weights = self.create_weights(params)
         
-        output = states
-        for w in weights:
-            output = output @ w
+        #print(f'MLP : params {params.shape} states {states.shape}')
         
-        return output
+        ## hotfix
+        if len(states.shape)>=3:
+            #print(f'MLP : States has too many dimensions, squeezing one')
+            states = states.squeeze(0)
+        
+        
+        weights,biases = self.create_weights(params)
+        outputs = states.T
+        
+        for i,(w,b) in enumerate(
+                            zip(weights,biases)
+                            ):
+            
+            w_tmp = w @ outputs
+            b_tmp = b.unsqueeze(-1).expand_as(w_tmp)
+            outputs =  w_tmp + b_tmp
+            
+            ## no nonlinearity for last layer
+            if (i+1) == (self.n_layers) :
+                
+                outputs = self.nonlinearity(outputs)
+                
+            #print(f'forward : output_tmp.shape{output_tmp.shape} b_tmp.shape{b_tmp.shape}')
+            #print(f'forward: output.shape {output.shape}')
+        return outputs
 
-
+if __name__ == '__main__':
+    
+    mlp = MLP([4,2],add_bias=True)
+    params = torch.rand(10,mlp.len_params)
+    states = torch.rand(1000,4)
+    mlp(params,states).size()

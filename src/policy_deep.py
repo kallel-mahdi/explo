@@ -88,7 +88,7 @@ class MLP:
         return net
 
         
-    def __call__(self,states,params):
+    def __call__(self,params,states):
         
         
         ### we initialize network at each call (maybe reset network in future)
@@ -107,6 +107,6 @@ if __name__ == "__main__":
     mlp = MLP([8,2],add_bias=True)
     params = torch.rand(mlp.len_params)
     states = torch.rand(10,5,8)
-    mlp(states,params).size()
+    mlp(params,states).size()
 
         
