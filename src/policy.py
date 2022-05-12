@@ -73,12 +73,6 @@ class MLP(torch.nn.Module):
         
         #print(f'MLP : params {params.shape} states {states.shape}')
         
-        ## hotfix
-        if len(states.shape)>=3:
-            #print(f'MLP : States has too many dimensions, squeezing one')
-            states = states.squeeze(0)
-        
-        
         weights,biases = self.create_weights(params)
         outputs = states.T
         

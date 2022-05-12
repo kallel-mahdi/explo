@@ -116,12 +116,13 @@ class EnvironmentObjective:
         states, actions, rewards = self._unpack_episode()
         r = 0
         states[0] = self.manipulate_state(self.env.reset())
+        
         for t in range(self.max_steps):  # rollout
             
             #### no need for grads here
             with torch.no_grad():
-                actions[t] = self.mlp(params.unsqueeze(0),states[t].unsqueeze(0),)
-                #actions[t] = self.mlp(states[t], params)
+                actions[t] = self.mlp(params,states[t].unsqueeze(0))
+                #actions[t] = self.mlp(params,states[t])
             ###########################
             
             state, rewards[t], done, _ = self.env.step(actions[t].detach().numpy())
@@ -139,7 +140,7 @@ class EnvironmentObjective:
         self._last_episode_length = t
         if render and not test:
             self.env.close()
-
+            
         return torch.tensor([r], dtype=torch.float32)
     
     ######## NEWWWWWWWW ###########

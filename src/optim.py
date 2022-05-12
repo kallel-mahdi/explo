@@ -60,6 +60,7 @@ def step(model,objective_env):
     
     len_params = model.train_inputs[0].shape[-1]
     ### fit hypers of GP
+    
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
     fit_gpytorch_model(mll)
 
@@ -70,12 +71,11 @@ def step(model,objective_env):
       acq_function=EI,
       bounds = torch.tensor([[0.0] * len_params, [1.0] * len_params]),
       q=1, ## always 1 for closed form acqf
-      num_restarts=5,   
-      raw_samples=50, ##number of initial random samples  
+      num_restarts=2,   
+      raw_samples=3, ##number of initial random samples  
     )
-  
+    
     new_y = objective_env(new_x)
-    #print(f'new_x.shape{new_x.shape} new_y {new_y.shape}')
     ### Update training points.
     train_x = torch.cat([model.train_inputs[0], new_x])
     train_y = torch.cat([model.train_targets, new_y])
