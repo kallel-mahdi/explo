@@ -89,8 +89,6 @@ class MLP(torch.nn.Module):
                 
                 outputs = self.nonlinearity(outputs)
                 
-            #print(f'forward : output_tmp.shape{output_tmp.shape} b_tmp.shape{b_tmp.shape}')
-            #print(f'forward: output.shape {output.shape}')
         return outputs
 
 if __name__ == '__main__':

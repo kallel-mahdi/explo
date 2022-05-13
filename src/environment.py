@@ -121,7 +121,7 @@ class EnvironmentObjective:
             
             #### no need for grads here
             with torch.no_grad():
-                actions[t] = self.mlp(params,states[t].unsqueeze(0))
+                actions[t] = self.mlp(params,states[t].unsqueeze(0)).squeeze()
                 #actions[t] = self.mlp(params,states[t])
             ###########################
             
@@ -152,6 +152,7 @@ class EnvironmentObjective:
         box = self.env.observation_space
         low,high = box.low,box.high
         print(f'observation box low : {low}/ high {high}')
+        
         state_dims = low.shape[0]
 
         points = [torch.linspace(low[i],high[i],samples_per_dim) 

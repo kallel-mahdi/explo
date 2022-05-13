@@ -69,10 +69,10 @@ def step(model,objective_env):
     EI = ExpectedImprovement(model=model, best_f=best_value)
     new_x, _ = optimize_acqf(
       acq_function=EI,
-      bounds = torch.tensor([[0.0] * len_params, [1.0] * len_params]),
+      bounds = torch.tensor([[-1.0] * len_params, [1.0] * len_params]),
       q=1, ## always 1 for closed form acqf
-      num_restarts=2,   
-      raw_samples=3, ##number of initial random samples  
+      num_restarts=5,   
+      raw_samples=20, ##number of initial random samples  
     )
     
     new_y = objective_env(new_x)
