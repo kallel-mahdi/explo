@@ -57,6 +57,15 @@ def my_optimize_acqf(acq_function,bounds,
   return X_best.detach(),None
 
 def step(model,objective_env):
+      
+    ### see evolution of parameters
+    print("##############################")
+    for name,param in model.named_parameters():
+        if param.requires_grad:
+          print(name, param.data)
+    
+    print("##############################")
+    ###########################
     
     len_params = model.train_inputs[0].shape[-1]
     ### fit hypers of GP
@@ -77,10 +86,9 @@ def step(model,objective_env):
     
     ### evaluate new_x (here we evaluate only once)
     new_y,new_s = objective_env(new_x)
+    
     ### Update training points.
-    train_x = torch.cat([model.train_inputs[0], new_x])
-    train_y = torch.cat([model.train_targets, new_y])
-    model.set_train_data(inputs=train_x, targets=train_y, strict=False)
+    model.update_train_data(new_x,new_y,new_s, strict=False)
     
     
     return new_x,new_y,new_s
