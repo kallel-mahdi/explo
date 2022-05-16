@@ -75,10 +75,12 @@ def step(model,objective_env):
       raw_samples=20, ##number of initial random samples  
     )
     
-    new_y = objective_env(new_x)
+    ### evaluate new_x (here we evaluate only once)
+    new_y,new_s = objective_env(new_x)
     ### Update training points.
     train_x = torch.cat([model.train_inputs[0], new_x])
     train_y = torch.cat([model.train_targets, new_y])
     model.set_train_data(inputs=train_x, targets=train_y, strict=False)
     
-    return new_x,new_y
+    
+    return new_x,new_y,new_s
