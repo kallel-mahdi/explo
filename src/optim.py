@@ -9,6 +9,10 @@ from botorch.optim import optimize_acqf
 from botorch.optim.initializers import initialize_q_batch_nonneg
 
 import logging
+import logging.config
+
+logging.config.fileConfig('logging.conf')
+logger = logging.getLogger("MathLog."+__name__)
 
 def my_optimize_acqf(acq_function,bounds,
                      q,num_restarts,raw_samples):
@@ -56,39 +60,41 @@ def my_optimize_acqf(acq_function,bounds,
   X_best = X[torch.argmax(acq_function(X))]
   return X_best.detach(),None
 
-def step(model,objective_env):
-      
-    ### see evolution of parameters
-    print("##############################")
-    for name,param in model.named_parameters():
-        if param.requires_grad:
-          print(name, param.data)
-    
-    print("##############################")
-    ###########################
-    
-    len_params = model.train_inputs[0].shape[-1]
-    ### fit hypers of GP
-    
-    mll = ExactMarginalLogLikelihood(model.likelihood, model)
-    fit_gpytorch_model(mll)
 
-    ### optimize acqf
-    best_value = model.train_targets.max()
-    EI = ExpectedImprovement(model=model, best_f=best_value)
-    new_x, _ = optimize_acqf(
-      acq_function=EI,
-      bounds = torch.tensor([[-1.0] * len_params, [1.0] * len_params]),
-      q=1, ## always 1 for closed form acqf
-      num_restarts=5,   
-      raw_samples=20, ##number of initial random samples  
-    )
-    
-    ### evaluate new_x (here we evaluate only once)
-    new_y,new_s = objective_env(new_x)
-    
-    ### Update training points.
-    model.update_train_data(new_x,new_y,new_s, strict=False)
-    
-    
-    return new_x,new_y,new_s
+class Optimizer:
+      
+  
+  def print_hypers(self,model):
+        
+      print("##############################")
+      for name,param in model.named_parameters():
+          if param.requires_grad:
+            print(name, param.data)
+      print("##############################")
+        
+  def step(self,model,objective_env):
+        
+      len_params = model.train_inputs[0].shape[-1]
+      
+      ### fit hypers of GP
+      mll = ExactMarginalLogLikelihood(model.likelihood, model)
+      fit_gpytorch_model(mll)
+
+      ### optimize acqf
+      best_value = model.train_targets.max()
+      EI = ExpectedImprovement(model=model, best_f=best_value)
+      new_x, _ = optimize_acqf(
+        acq_function=EI,
+        bounds = torch.tensor([[-1.0] * len_params, [1.0] * len_params]),
+        q=1, ## always 1 for closed form acqf
+        raw_samples=20, ##number of initial random samples  
+        num_restarts=5, ## number of seeds initiated from random restarts
+      )
+      
+      ### evaluate new_x (here we evaluate only once)
+      new_y,new_s = objective_env(new_x)
+      
+      ### Update training points.
+      model.update_train_data(new_x,new_y,new_s, strict=False)
+      
+      return new_x,new_y,new_s

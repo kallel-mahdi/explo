@@ -85,12 +85,14 @@ class MLP(torch.nn.Module):
             outputs =  w_tmp + b_tmp
             
             ## no nonlinearity for last layer
-            if (i+1) == (self.n_layers) :
+            if (i+1) < (self.n_layers) :
                 
                 outputs = self.nonlinearity(outputs)
                 
         return outputs
-
+    
+            
+            
 if __name__ == '__main__':
     
     mlp = MLP([4,2],add_bias=True)

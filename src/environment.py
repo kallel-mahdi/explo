@@ -31,7 +31,16 @@ class EnvironmentObjective:
     ):
         """Inits the translation environment to objective."""
         self.env = env
-        self.mlp = mlp
+        
+        
+        discrete = hasattr(env.action_space,"n")
+
+        if discrete:
+            self.mlp = discretize(mlp,num_actions=env.action_space.n)
+        else:
+            self.mlp = mlp
+        
+        
         self.max_steps = env._max_episode_steps
         self.timesteps = 0
         self.timesteps_to_reward = {}
@@ -143,26 +152,7 @@ class EnvironmentObjective:
             
         return torch.tensor([r], dtype=torch.float32),states
     
-    ######## NEWWWWWWWW ###########
-
-  
-    
-    def get_grid(self,samples_per_dim=10):
-        
-        box = self.env.observation_space
-        low,high = box.low,box.high
-        print(f'observation box low : {low}/ high {high}')
-        
-        state_dims = low.shape[0]
-
-        points = [torch.linspace(low[i],high[i],samples_per_dim) 
-                    for i in range(state_dims)]
-        grid = torch.meshgrid(*points)
-        grid = torch.stack(grid)
-        grid = torch.flatten(grid,start_dim=1).T ## [n_states,state_dim]
-        
-        return grid
-
+   
 
     def test_params(
         self,
@@ -199,6 +189,32 @@ class EnvironmentObjective:
             except:
                 self.env.close()
         return reward
+
+
+
+def discretize(function: Callable, num_actions: int):
+        """Discretize output/actions of MLP.
+    For instance necessary for the CartPole environment.
+    Args:
+        function: Mapping states with parameters to actions, e.g. MLP.
+        num_actions: Number of function outputs.
+    Returns:
+        Function with num_actions discrete outputs.
+    """
+
+        def discrete_policy_2(state, params):
+            return (function(state, params) > 0.0) * 1
+
+        def discrete_policy_n(state, params):
+            return torch.argmax(function(state, params))
+
+        if num_actions == 2:
+            discrete_policy = discrete_policy_2
+        elif num_actions > 2:
+            discrete_policy = discrete_policy_n
+        else:
+            raise (f"Argument num_actions is {num_actions} but has to be greater than 1.")
+        return discrete_policy
 
 if __name__ == '__main__':
     
