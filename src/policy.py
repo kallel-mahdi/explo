@@ -20,8 +20,6 @@ class MLP(torch.nn.Module):
         Note the MLP can support batches of weights """
         
         super(MLP, self).__init__()
-        
-        
             
         weight_sizes  = [(in_size,out_size)
                                 for in_size, out_size in zip(Ls[:-1], Ls[1:])]
