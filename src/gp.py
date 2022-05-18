@@ -18,7 +18,8 @@ class MyGP(ExactGP,GPyTorchModel):
         
         ard_num_dims = train_x.shape[-1]
         self.mean_module = ConstantMean()
-        self.covar_module = self.setup_kernel(kernel_name,ard_num_dims,use_ard)
+        self.covar_module = self.setup_kernel(kernel_name,ard_num_dims,use_ard,
+                                              mlp,train_s)
         
     def update_train_data(self,new_x, new_y,new_s,strict=False):
         
@@ -45,7 +46,7 @@ class MyGP(ExactGP,GPyTorchModel):
         return best_x,best_y
     
     
-    def setup_kernel(self,kernel_name,ard_num_dims,use_ard):
+    def setup_kernel(self,kernel_name,ard_num_dims,use_ard,mlp,train_s):
         
         if kernel_name == "rbf":
             kernel = MyRBFKernel(ard_num_dims,use_ard)

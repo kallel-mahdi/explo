@@ -25,9 +25,10 @@ class BOptimizer(object):
       ### optimize acqf
       best_value = model.train_targets.max()
       EI = ExpectedImprovement(model=model, best_f=best_value)
+      eps = 1e-2
       new_x, _ = optimize_acqf(
         acq_function=EI,
-        bounds = torch.tensor([[-1.0] * len_params, [1.0] * len_params]),
+        bounds = torch.tensor([[-eps] * len_params, [eps] * len_params]),
         q=1, ## always 1 for closed form acqf
         raw_samples=20, ##number of initial random samples  
         num_restarts=5, ## number of seeds initiated from random restarts
@@ -35,6 +36,8 @@ class BOptimizer(object):
       
       ### evaluate new_x (here we evaluate only once)
       new_y,new_s = objective_env(new_x)
+      
+      assert not new_x.requires_grad    
       ### Update training points.
       model.update_train_data(new_x,new_y,new_s, strict=False)
       

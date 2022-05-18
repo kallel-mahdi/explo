@@ -33,7 +33,7 @@ class MLP(torch.nn.Module):
         )
         
         if nonlinearity is None:
-            nonlinearity = torch.nn.ReLU()
+            nonlinearity = torch.nn.Identity()
         
         self.__dict__.update(locals())
         
