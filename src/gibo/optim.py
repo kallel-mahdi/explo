@@ -4,7 +4,7 @@ from botorch.fit import fit_gpytorch_model
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from src.gibo.acqf import GradientInformation
 
-
+from torch.optim import  LBFGS
 class GIBOptimizer(object):
         
                
@@ -35,8 +35,8 @@ class GIBOptimizer(object):
                 acq_function=self.gradInfo,
                 bounds=bounds,
                 q=1,  # Analytic acquisition function.
-                num_restarts=20,
-                raw_samples=100,
+                num_restarts=5,
+                raw_samples=64,
                 options={'nonnegative': True, 'batch_limit': 5},
                 return_best_only=True,
                 sequential=False)
@@ -69,13 +69,11 @@ class GIBOptimizer(object):
     def step(self,model,objective_env):
    
         theta_i = self.theta_i
-        print(f'theta_i{self.theta_i}')
         
         #model.posterior(self.theta_i)  ## hotfix
  
         # Evaluate current parameters
         new_y,new_s = objective_env(theta_i)
-        print(f'theta_i.shape{theta_i.shape}')
         model.update_train_data(theta_i,new_y,new_s, strict=False)
         self.gradInfo.update_theta_i(theta_i)
         

@@ -150,7 +150,7 @@ class EnvironmentObjective:
         if render and not test:
             self.env.close()
             
-        return torch.tensor([r], dtype=torch.float32),states
+        return torch.tensor([r/350], dtype=torch.float32),states
     
    
 

@@ -20,7 +20,8 @@ def get_initial_data(mlp,objective_env,n_init):
     
     
     ### generate initial data
-    train_x = torch.rand(n_init,mlp.len_params) ## [n_trials,n_params]
+    #train_x = torch.rand(n_init,mlp.len_params) ## [n_trials,n_params]
+    train_x = torch.zeros(n_init,mlp.len_params) ## [n_trials,n_params]
     tmp = [objective_env.run(p) for p in train_x]
     train_y = torch.Tensor([d[0] for d in tmp]).reshape(-1)  ## [n_trials,1]
     train_s = torch.stack( [d[1] for d in tmp])  ## [n_trials,max_len,state_dim]
