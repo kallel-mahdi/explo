@@ -51,8 +51,8 @@ class BOptimizer(object):
     #       if param.requires_grad:
     #         print(name, param.data)
       print("##############################")
-      print(f'covar_lengthscale {model.covar_module.kernel.base_kernel.lengthscale} \
-            covar_outputscale {model.covar_module.kernel.outputscale.item()} \
+      print(f'covar_lengthscale {model.covar_module.base_kernel.lengthscale} \
+            covar_outputscale {model.covar_module.outputscale.item()} \
             noise {model.likelihood.noise_covar.noise.item()}')
       print("##############################")
             

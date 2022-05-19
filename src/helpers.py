@@ -8,7 +8,7 @@ from gym.spaces.box import Box
 from gym.spaces.discrete import Discrete
 
 from src.environment import EnvironmentObjective
-from src.gp import MyGP
+from src.gp import MyGP,DEGP
 from src.policy import MLP
 
 logging.config.fileConfig('logging.conf')
@@ -45,7 +45,7 @@ def setup_policy(env):
     
     return mlp
     
-def setup_experiment(env_name,kernel_name,n_init):
+def setup_experiment(env_name,model_config,n_init):
     
     ### build environment and linear policy
     env = gym.make(env_name)
@@ -59,10 +59,11 @@ def setup_experiment(env_name,kernel_name,n_init):
             manipulate_reward=None,
             )
     
-    init_data = get_initial_data(mlp,objective_env,n_init)
+    train_x,train_y,train_s = get_initial_data(mlp,objective_env,n_init)
     # initialize likelihood and model
-    likelihood = gpytorch.likelihoods.GaussianLikelihood()
-    model = MyGP(*init_data,likelihood,
-            kernel_name=kernel_name,mlp=mlp)
+    # model = MyGP(*init_data,
+    #         kernel_name=kernel_name,mlp=mlp)
+    
+    model = DEGP(train_x=train_x,train_y=train_y,train_s=train_s,**model_config)
     
     return model,objective_env

@@ -1,8 +1,15 @@
-from torch.nn import Linear,Sequential,Identity
-from typing import Tuple, List, Callable, Union, Optional
+import logging
+import logging.config
 from copy import deepcopy
 from itertools import chain
+from typing import Callable, List, Optional, Tuple, Union
+
 import torch
+from torch.nn import Identity, Linear, Sequential
+
+logging.config.fileConfig('logging.conf')
+logger = logging.getLogger("ShapeLog."+__name__)
+
 
 class MLP(torch.nn.Module):
     
@@ -69,7 +76,7 @@ class MLP(torch.nn.Module):
         
     def forward(self,params,states):
         
-        #print(f'MLP : params {params.shape} states {states.shape}')
+        logger.debug(f'MLP : params {params.shape} states {states.shape}')
         
         weights,biases = self.create_weights(params)
         outputs = states.T

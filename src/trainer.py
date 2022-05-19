@@ -3,9 +3,9 @@ from src.optim import BOptimizer
 
 class Trainer:
     
-    def __init__(self,model,objective_env,n_steps):
+    def __init__(self,model,objective_env,optimizer,n_steps):
         
-        optimizer = BOptimizer()
+        #optimizer = BOptimizer()
         self.__dict__.update(locals())
         
     def run(self,report_freq=100):
