@@ -30,12 +30,12 @@ class MyGP(ExactGP,GPyTorchModel):
         #                                       mlp,train_s)
         
         likelihood = gpytorch.likelihoods.GaussianLikelihood(
-            noise_constraint=gpytorch.constraints.GreaterThan(0.01)
+            noise_constraint=noise_constraint,noise_hyperprior=noise_hyperprior
         )
         
         ### Do not optimize noise
-        likelihood.noise_covar.noise = 0.01
-        likelihood.noise_covar.raw_noise.requires_grad = False
+        # likelihood.noise_covar.noise = 0.01
+        # likelihood.noise_covar.raw_noise.requires_grad = False
         ###
         
         ExactGP.__init__(self,train_x, train_y, likelihood)
