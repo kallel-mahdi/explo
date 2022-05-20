@@ -22,12 +22,17 @@ class MyGP(ExactGP,GPyTorchModel):
                 ard_num_dims=None,
                 N_max=None,
                 prior_mean=0,
-                mlp=None,use_ard=False):
+                mlp=None,use_ard=False
+                ):
         
         
         
         # self.covar_module = self.setup_kernel(kernel_name,ard_num_dims,use_ard,
         #                                       mlp,train_s)
+        
+        
+        self.x_hist = train_x.clone()
+        self.y_hist = train_y.clone()
         
         likelihood = gpytorch.likelihoods.GaussianLikelihood(
             noise_constraint=noise_constraint,noise_hyperprior=noise_hyperprior
@@ -65,14 +70,21 @@ class MyGP(ExactGP,GPyTorchModel):
         
     def update_train_data(self,new_x, new_y,new_s,strict=False):
         
+        ### concatenate new data
         train_x = torch.cat([self.train_inputs[0], new_x])
         train_y = torch.cat([self.train_targets, new_y])
+        
         ExactGP.set_train_data(self,inputs=train_x,targets=train_y,strict=strict)
         self.N = train_x.shape[0]
+        
+        ### update history 
+        self.x_hist = torch.cat([self.x_hist, new_x])
+        self.y_hist = torch.cat([self.y_hist, new_y])
         
         ### update state kernels with new states
         if isinstance(self.covar_module,StateKernel):
             self.covar_module.update(new_s)
+            
 
     def forward(self, x):
         
@@ -82,11 +94,10 @@ class MyGP(ExactGP,GPyTorchModel):
     
     def get_best_params(self):
             
-        argmax = torch.argmax(self.train_targets)
-        best_x = self.train_inputs[0][argmax]
-        best_y = self.train_targets[argmax]
+        argmax = torch.argmax(self.y_hist)
+        best_x = self.x_hist[0][argmax]
+        best_y = self.y_hist[argmax]
         return best_x,best_y
-    
     
     def setup_kernel(self,kernel_name,ard_num_dims,use_ard,mlp,train_s):
         

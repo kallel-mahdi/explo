@@ -46,18 +46,17 @@ def setup_policy(env):
     
     return mlp
     
-def setup_experiment(env_name,model_config,n_init):
+def setup_experiment(env_config,model_config,n_init):
     
     ### build environment and linear policy
-    env = gym.make(env_name)
+    env = gym.make(env_config["env_name"])
     mlp = setup_policy(env)
     
     ### objective env evaluates the policy episodically
     objective_env = EnvironmentObjective(
             env=env,
             mlp=mlp,
-            manipulate_state=None,
-            manipulate_reward=None,
+            **env_config
             )
     
     train_x,train_y,train_s = get_initial_data(mlp,objective_env,n_init)

@@ -80,9 +80,7 @@ class GIBOptimizer(object):
         # Only optimize model hyperparameters if N >= N_max.
         if (model.N >= self.N_max): 
             
-            print("TRUNCAAATING OLD DATAAAAAAAAAA")
-            self.print_hypers(model)
-            
+            #print("TRUNCAAATING OLD DATAAAAAAAAAA")
 
             # Adjust hyperparameters
             mll = ExactMarginalLogLikelihood(model.likelihood, model)
@@ -105,15 +103,3 @@ class GIBOptimizer(object):
         # Add new theta_i to history 
         self.params_history.append(theta_i.clone())
         
-    def print_hypers(self,model):
-        
-        #   print("##############################")
-        #   for name,param in model.named_parameters():
-        #       if param.requires_grad:
-        #         print(name, param.data)
-        print("##############################")
-        print(f'covar_lengthscale {model.covar_module.base_kernel.lengthscale} \
-                covar_outputscale {model.covar_module.outputscale.item()} \
-                noise {model.likelihood.noise_covar.noise.item()}')
-        print("##############################")
-                

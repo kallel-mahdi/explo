@@ -26,12 +26,14 @@ class EnvironmentObjective:
         self,
         env: gym.Env,
         mlp: Callable,
+        reward_scale = 1.0,
+        reward_shift = 0.0,
         manipulate_state: Optional[Callable] = None,
-        manipulate_reward: Optional[Callable] = None,
+        #manipulate_reward: Optional[Callable] = None,
+        *arg,**kwargs
     ):
         """Inits the translation environment to objective."""
         self.env = env
-        
         
         discrete = hasattr(env.action_space,"n")
 
@@ -61,9 +63,11 @@ class EnvironmentObjective:
             "rewards": torch.empty(self.max_steps, dtype=torch.float32),
         }
 
-        if manipulate_reward is None:
-            manipulate_reward = lambda reward, action, state, done: reward
-        self.manipulate_reward = manipulate_reward
+        # if manipulate_reward is None:
+        #     manipulate_reward = lambda reward, action, state, done: reward
+        # self.manipulate_reward = manipulate_reward
+        
+        self.manipulate_reward = manipulate_reward(reward_shift,reward_scale)
 
         self._manipulate_state = manipulate_state
         if manipulate_state is None:
@@ -150,7 +154,7 @@ class EnvironmentObjective:
         if render and not test:
             self.env.close()
             
-        return torch.tensor([r/350], dtype=torch.float32),states
+        return torch.tensor([r], dtype=torch.float32),states
     
    
 
@@ -216,13 +220,18 @@ def discretize(function: Callable, num_actions: int):
             raise (f"Argument num_actions is {num_actions} but has to be greater than 1.")
         return discrete_policy
 
-if __name__ == '__main__':
-    
-    # In evaluation mode manipulation of state and reward is always None.
+def manipulate_reward(shift: Union[int, float], scale: Union[int, float]):
+    """Manipulate reward in every step with shift and scale.
 
-    objective_env = EnvironmentObjective(
-    env=gym.make("Swimmer-v2"),
-    mlp=mlp,
-    manipulate_state=None,
-    manipulate_reward=None,
-    )
+    Args:
+        shift: Reward shift.
+        scale: Reward scale.
+
+    Return:
+        Manipulated reward.
+    """
+    if shift is None:
+        shift = 0
+    if scale is None:
+        scale = 1
+    return lambda reward, action, state, done: (reward - shift) / scale
