@@ -13,6 +13,11 @@ logger = logging.getLogger("MathLog."+__name__)
 
 
 class BOptimizer(object):
+      
+      
+  def __init__(self,n_eval=5):
+        
+        self.n_eval = n_eval
           
   def step(self,model,objective_env):
         
@@ -35,7 +40,7 @@ class BOptimizer(object):
       )
       
       ### evaluate new_x (here we evaluate only once)
-      new_y,new_s = objective_env(new_x)
+      new_y,new_s = objective_env(new_x,self.n_eval)
       
       assert not new_x.requires_grad    
       ### Update training points.

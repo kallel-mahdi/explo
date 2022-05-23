@@ -13,12 +13,12 @@ class MyGP(ExactGP,GPyTorchModel):
     _num_outputs = 1
     
     def __init__(self, train_x, train_y,train_s,
+                noise_constraint=None,
+                noise_hyperprior=None,
                 lengthscale_constraint=None,
                 lengthscale_hyperprior=None,
                 outputscale_constraint=None,
                 outputscale_hyperprior=None,
-                noise_constraint=None,
-                noise_hyperprior=None,
                 ard_num_dims=None,
                 N_max=None,
                 prior_mean=0,
@@ -38,14 +38,13 @@ class MyGP(ExactGP,GPyTorchModel):
             noise_constraint=noise_constraint,noise_hyperprior=noise_hyperprior
         )
         
-        ### Do not optimize noise
+        ### Use fixed (unoptimizable) noise
         # likelihood.noise_covar.noise = 0.01
         # likelihood.noise_covar.raw_noise.requires_grad = False
         ###
         
         ExactGP.__init__(self,train_x, train_y, likelihood)
         self.mean_module = ConstantMean()
-        
         
         self.mean_module = gpytorch.means.ConstantMean()
         self.covar_module = gpytorch.kernels.ScaleKernel(
@@ -57,6 +56,7 @@ class MyGP(ExactGP,GPyTorchModel):
             outputscale_prior=outputscale_hyperprior,
             outputscale_constraint=outputscale_constraint,
         )
+        
         # Initialize lengthscale and outputscale to mean of priors.
         if lengthscale_hyperprior is not None:
             self.covar_module.base_kernel.lengthscale = lengthscale_hyperprior.mean
@@ -95,7 +95,7 @@ class MyGP(ExactGP,GPyTorchModel):
     def get_best_params(self):
             
         argmax = torch.argmax(self.y_hist)
-        best_x = self.x_hist[0][argmax]
+        best_x = self.x_hist[argmax]
         best_y = self.y_hist[argmax]
         return best_x,best_y
     

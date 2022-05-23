@@ -8,7 +8,7 @@ from torch.optim import  LBFGS
 class GIBOptimizer(object):
         
                
-    def __init__(self,model,
+    def __init__(self,model,n_eval=5,
             n_info_samples=16,delta=0.1,
             normalize_gradient=True,standard_deviation_scaling=False,
             verbose= False):
@@ -42,7 +42,7 @@ class GIBOptimizer(object):
                 sequential=False)
             
             # Update training points.
-            new_y,new_s = objective_env(new_x)
+            new_y,new_s = objective_env(new_x,self.n_eval)
             model.update_train_data(new_x,new_y,new_s, strict=False)
             model.posterior(self.theta_i)  ## hotfix
             self.gradInfo.update_K_xX_dx()
@@ -69,8 +69,6 @@ class GIBOptimizer(object):
     def step(self,model,objective_env):
    
         theta_i = self.theta_i
-        
-        #model.posterior(self.theta_i)  ## hotfix
  
         # Evaluate current parameters
         new_y,new_s = objective_env(theta_i)
@@ -80,8 +78,6 @@ class GIBOptimizer(object):
         # Only optimize model hyperparameters if N >= N_max.
         if (model.N >= self.N_max): 
             
-            #print("TRUNCAAATING OLD DATAAAAAAAAAA")
-
             # Adjust hyperparameters
             mll = ExactMarginalLogLikelihood(model.likelihood, model)
             fit_gpytorch_model(mll)

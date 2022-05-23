@@ -15,7 +15,8 @@ class StateKernel(Kernel):
     """Abstract class for a kernel that uses state action pairs metric
     """
     
-    def __init__(self,mlp,train_s):
+    def __init__(self,mlp,train_s,kernel,
+                ):
         
         super().__init__()
         self.mlp = mlp
@@ -25,13 +26,7 @@ class StateKernel(Kernel):
         ### chose kernel
         
         #self.kernel = ScaleKernel(RBFKernel())
-        self.kernel = ScaleKernel(
-                MaternKernel(
-                    nu=2.5,
-                    ard_num_dims=None,
-                    lengthscale_prior=GammaPrior(3.0, 6.0)),
-                outputscale_prior=GammaPrior(2.0, 0.15),
-            )
+        self.kernel = kernel
 
     def test_policy(self,params_batch,states):
         
@@ -150,3 +145,28 @@ class MyMaternKernel(Kernel):
         kernel = self.kernel.forward(x1,x2,**params)
         logger.debug(f'pair kernel {kernel.shape}')
         return kernel
+
+
+
+
+class MyKernel(Kernel):
+    
+    def __init__(self,ard_num_dims,use_ard=False):
+        
+        super().__init__()
+        
+        self.covar_module = gpytorch.kernels.ScaleKernel(
+        gpytorch.kernels.RBFKernel(
+            ard_num_dims=ard_num_dims,
+            lengthscale_prior=lengthscale_hyperprior,
+            lengthscale_constraint=lengthscale_constraint,
+                                ),
+            outputscale_prior=outputscale_hyperprior,
+            outputscale_constraint=outputscale_constraint,
+                                                        )   
+    
+        
+        
+        
+    
+    

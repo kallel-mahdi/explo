@@ -77,8 +77,8 @@ class EnvironmentObjective:
             torch.tensor(state, dtype=dtype_states)
         )
 
-    def __call__(self, params: torch.Tensor) :
-        return self.run(params)
+    def __call__(self, params,n_episodes=1) :
+        return self.run_many(params,n_episodes)
 
     def _unpack_episode(self):
         
@@ -111,7 +111,7 @@ class EnvironmentObjective:
         }
 
     def run(
-        self, params: torch.Tensor, render: bool = False, test: bool = False
+        self, params: torch.Tensor
     ) :
         """One rollout of an episodic environment with finite horizon.
 
@@ -143,20 +143,26 @@ class EnvironmentObjective:
             r += self.manipulate_reward(
                 rewards[t], actions[t], states[t + 1], done
             )  # Define as stochastic gradient ascent.
-            if render:
-                self.env.render()
+            
             if done:
                 break
-        if not test:
-            self.timesteps += t
-            self.timesteps_to_reward.update({self.timesteps: rewards[:t].sum()})
-        self._last_episode_length = t
-        if render and not test:
-            self.env.close()
-            
+         
         return torch.tensor([r], dtype=torch.float32),states
     
-   
+    def run_many(self, params,n_episodes):
+       
+        rewards = torch.tensor([0], dtype=torch.float32)
+       
+        for _ in range(n_episodes):
+           
+           reward,states = self.run(params)
+           
+           rewards += reward
+           
+        
+        return rewards/n_episodes, states
+    
+           
 
     def test_params(
         self,
