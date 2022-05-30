@@ -10,6 +10,8 @@ from gpytorch.mlls import ExactMarginalLogLikelihood
 from sklearn.metrics import mean_absolute_error as mae
 from sklearn.model_selection import train_test_split
 
+from src.kernels import StateKernel
+
 ##fix random seed
 random.seed(0)
 torch.manual_seed(0)
@@ -18,7 +20,7 @@ class Tester:
     
     def __init__(self,model,objective_env,
                  local_opt,delta,
-                 n_train,n_test,n_episodes=5
+                 n_train,n_test,n_episodes
                  ):
         
         #### if local opt is a path
@@ -26,7 +28,6 @@ class Tester:
             with open(local_opt,'rb') as f:
                 local_opt,local_y = pickle.load(f)
                 print(f'local_y {local_y} local_opt {local_opt[:10]}')
-        
         
         self.__dict__.update(locals())
         self.test_optimum(local_opt)
@@ -45,6 +46,8 @@ class Tester:
                 
     def generate_data(self,local_opt,delta,n_train,n_test):
         
+        print(f'Generating data')
+        
         ### sample parameters unformly
         bounds = torch.tensor([[-delta], [delta]]) + local_opt
         U = torch.distributions.Uniform(bounds[0],bounds[1])
@@ -54,8 +57,12 @@ class Tester:
         train_x,test_x = train_test_split(data_x,test_size=n_test)
         train_data = self.run_params(train_x)
         test_data = self.run_params(test_x)
+        _,kernel_states = self.objective_env(local_opt.reshape(1,-1))
+        print(f'kernel states {kernel_states.shape}')
         
-        return train_data,test_data
+        print(f'Done generating data')
+        
+        return train_data,test_data,kernel_states
     
   
     def run_params(self,x):
@@ -73,12 +80,6 @@ class Tester:
         x,y,_ = data
         y_hat,lower,upper = pred_data
         err = lower-y_hat
-        
-        # print("y_hat",y_hat)
-        # print("lower",lower)
-        # low_error = (lower-y_hat).reshape(1,-1)
-        # up_error  = (upper-y_hat).reshape(1,-1)
-        #y_err = torch.vstack((low_error,up_error))
         
         ### arrange points by l2 distance to optimum
         dist = torch.linalg.norm(x-best_x,dim=1)
@@ -116,17 +117,20 @@ class Tester:
         lower, upper = pred.confidence_region()   
         y_hat = pred.mean  
         
-           
         return y_hat,lower,upper
     
-    def fit(self,model,train_x,train_y):
+    def fit(self,model,train_x,train_y,kernel_states):
         
         model.train()
         model.likelihood.train()
         
+        if isinstance(model.covar_module,StateKernel):
+            
+            print(f'kernel states 2 {kernel_states.shape}')
+            model.covar_module.states = kernel_states[:5]
+        
         ### Check hypers before training
         model.print_hypers()
-        
         model.set_train_data(inputs=train_x,targets=train_y,strict=False)
         mll = ExactMarginalLogLikelihood(model.likelihood, model)
         fit_gpytorch_model(mll)
@@ -140,15 +144,15 @@ class Tester:
     def run(self):
         
         # create data around optimum
-        print(f'Generating data')
-        train_data,test_data = self.generate_data(
+        
+        train_data,test_data,kernel_states = self.generate_data(
                     self.local_opt,self.delta,
-                    self.n_train,self.n_test)
-        print(f'Done generating data')
+                    self.n_train,self.n_test)        
+        
         # fit model locally
         train_x,train_y,train_s = train_data
     
-        model,tmp = self.fit(self.model,train_x,train_y)
+        model,tmp = self.fit(self.model,train_x,train_y,kernel_states)
 
         # generate predictions for test observations
         

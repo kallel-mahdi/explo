@@ -8,20 +8,20 @@ from torch.optim import  LBFGS
 
 class GIBOptimizer(object):
         
-    def __init__(self,model,n_eval=5,
-            n_info_samples=16,delta=0.1,
-            normalize_gradient=True,standard_deviation_scaling=False,
-            verbose= False):
+    def __init__(self,model,n_eval,
+                n_max,n_info_samples,
+                normalize_gradient=True,standard_deviation_scaling=False,
+                delta=0.1,verbose= False):
 
         gradInfo = GradientInformation(model)
         theta_i = model.train_inputs[0][-1].reshape(1,-1)
         params_history = [theta_i.clone()]
         len_params = theta_i.shape[-1]
-        N_max = model.N_max ##hotfix
-        
         optimizer_torch = torch.optim.SGD([theta_i], lr=0.5)
         
         self.__dict__.update(locals())
+        
+        print(f' Gibo will use {self.n_max} last points to fit GP and {self.n_info_samples} info samples')
         
     def optimize_information(self,objective_env,model,bounds):
     
@@ -75,15 +75,15 @@ class GIBOptimizer(object):
         model.update_train_data(theta_i,new_y,new_s, strict=False)
         self.gradInfo.update_theta_i(theta_i)
         
-        # Only optimize model hyperparameters if N >= N_max.
-        if (model.N >= self.N_max): 
+        # Only optimize model hyperparameters if N >= n_max.
+        if (model.N >= self.n_max): 
             
             # Adjust hyperparameters
             mll = ExactMarginalLogLikelihood(model.likelihood, model)
             fit_gpytorch_model(mll)
             # Restrict data to only recent points
-            last_x = model.train_inputs[0][-self.N_max:]
-            last_y = model.train_targets[-self.N_max:]
+            last_x = model.train_inputs[0][-self.n_max:]
+            last_y = model.train_targets[-self.n_max:]
             model.set_train_data(inputs=last_x,targets=last_y,strict=False)
             model.N = last_x.shape[0]
             model.posterior(self.theta_i)  ## hotfix

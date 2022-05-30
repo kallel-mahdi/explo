@@ -39,15 +39,12 @@ class MyGP(ExactGP,GPyTorchModel):
      
         ExactGP.__init__(self,train_x, train_y, likelihood)
         
-        self.N_max = kernel_config.pop('N_max')
         self.mean_module = ConstantMean() ## prior mean = 0
         self.covar_module = setup_kernel(kernel_config,mlp=mlp,train_s=train_s)
 
         self.N = train_x.shape[0]
         self.D = train_x.shape[1] 
 
-        
-        print(f' Using {self.N_max} last points to compute GP')
         
         
     def update_train_data(self,new_x, new_y,new_s,strict=False):

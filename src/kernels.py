@@ -18,7 +18,7 @@ debug._set_state(False) ##hotfix for GridKernel to inherit ScaleKernel
 class MyRBFKernel(ScaleKernel):
         
     
-    def __init__(self,ard_num_dims,use_ard=False,
+    def __init__(self,ard_num_dims,use_ard=True,
                 noise_constraint=None,
                 noise_hyperprior=None,
                 lengthscale_constraint=None,
@@ -28,6 +28,7 @@ class MyRBFKernel(ScaleKernel):
 
         if use_ard == False :
             ard_num_dims = None
+            
         rbf = RBFKernel(
             ard_num_dims=ard_num_dims,
             lengthscale_prior=lengthscale_hyperprior,
