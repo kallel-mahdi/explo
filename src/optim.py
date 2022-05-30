@@ -15,7 +15,7 @@ logger = logging.getLogger("MathLog."+__name__)
 class BOptimizer(object):
       
       
-  def __init__(self,n_eval=5):
+  def __init__(self,n_eval,**kwargs):
         
         self.n_eval = n_eval
           
@@ -49,17 +49,7 @@ class BOptimizer(object):
       return new_x,new_y,new_s
   
     
-  def print_hypers(self,model):
-        
-    #   print("##############################")
-    #   for name,param in model.named_parameters():
-    #       if param.requires_grad:
-    #         print(name, param.data)
-      print("##############################")
-      print(f'covar_lengthscale {model.covar_module.base_kernel.lengthscale} \
-            covar_outputscale {model.covar_module.outputscale.item()} \
-            noise {model.likelihood.noise_covar.noise.item()}')
-      print("##############################")
+
             
     
 def my_optimize_hyps():

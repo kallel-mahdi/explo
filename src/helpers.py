@@ -8,7 +8,8 @@ from gym.spaces.box import Box
 from gym.spaces.discrete import Discrete
 
 from src.environment import EnvironmentObjective
-from src.gp import MyGP,DEGP
+from src.gp import DEGP, MyGP
+from src.kernels import GridKernel, MyRBFKernel
 from src.policy import MLP
 
 logging.config.fileConfig('logging.conf')
@@ -46,7 +47,8 @@ def setup_policy(env):
     
     return mlp
     
-def setup_experiment(env_config,model_config,n_init):
+def setup_experiment(env_config,
+                     kernel_config,likelihood_config,n_init):
     
     ### build environment and linear policy
     env = gym.make(env_config["env_name"])
@@ -64,6 +66,10 @@ def setup_experiment(env_config,model_config,n_init):
     # model = MyGP(*init_data,
     #         kernel_name=kernel_name,mlp=mlp)
     
-    model = DEGP(train_x=train_x,train_y=train_y,train_s=train_s,**model_config)
+    model = DEGP(train_x=train_x,train_y=train_y,train_s=train_s,
+                 kernel_config=kernel_config,likelihood_config=likelihood_config,
+                 mlp =mlp)
     
     return model,objective_env
+
+

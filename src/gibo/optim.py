@@ -5,9 +5,9 @@ from gpytorch.mlls import ExactMarginalLogLikelihood
 from src.gibo.acqf import GradientInformation
 
 from torch.optim import  LBFGS
+
 class GIBOptimizer(object):
         
-               
     def __init__(self,model,n_eval=5,
             n_info_samples=16,delta=0.1,
             normalize_gradient=True,standard_deviation_scaling=False,
@@ -71,7 +71,7 @@ class GIBOptimizer(object):
         theta_i = self.theta_i
  
         # Evaluate current parameters
-        new_y,new_s = objective_env(theta_i)
+        new_y,new_s = objective_env(theta_i,self.n_eval)
         model.update_train_data(theta_i,new_y,new_s, strict=False)
         self.gradInfo.update_theta_i(theta_i)
         

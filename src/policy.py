@@ -39,6 +39,8 @@ class MLP(torch.nn.Module):
             ]
         )
         
+        n_actions = Ls[-1]
+        
         if nonlinearity is None:
             nonlinearity = torch.nn.Identity()
         
@@ -76,7 +78,7 @@ class MLP(torch.nn.Module):
         
     def forward(self,params,states):
         
-        logger.debug(f'MLP : params {params.shape} states {states.shape}')
+        #logger.debug(f'params {params.shape} states {states.shape}')
         
         weights,biases = self.create_weights(params)
         outputs = states.T
@@ -94,6 +96,7 @@ class MLP(torch.nn.Module):
                 
                 outputs = self.nonlinearity(outputs)
                 
+        #logger.debug(f'actions {outputs.shape}')
         return outputs
     
             

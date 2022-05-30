@@ -1,28 +1,30 @@
 
+import pickle
+
 from src.optim import BOptimizer
+
 
 class Trainer:
     
     def __init__(self,model,objective_env,optimizer,
-                 n_steps,report_freq):
+                 n_steps,report_freq,save_best=False,):
         
         #optimizer = BOptimizer()
         self.__dict__.update(locals())
     
-    def print_hypers(self,model):
+    
+    def save_bests(self):
+
+        task_name = self.objective_env.env.spec.id
+        ckpt_path = "/home/q123/Desktop/explo/local_optima/"+task_name
+        
+        with open(ckpt_path,'wb') as handle:
+    
+            pickle.dump((self.best_x,self.best_y),handle)
             
-        #   print("##############################")
-        #   for name,param in model.named_parameters():
-        #       if param.requires_grad:
-        #         print(name, param.data)
-        
-        print("##############################")
-        print(f'covar_lengthscale {model.covar_module.base_kernel.lengthscale} \
-                covar_outputscale {model.covar_module.outputscale.item()} \
-                noise {model.likelihood.noise_covar.noise.item()}')
-        print("##############################")
-                
-        
+        print(f'Saved best weights to {ckpt_path}')
+
+
     def run(self):
         
         report_freq = self.report_freq
@@ -43,10 +45,15 @@ class Trainer:
                 batch_max  = last_batch.max()
                 
                 print(f'current {curr} / max {max} /batch_mean {batch_mean} /batch_max {batch_max} ')
-                self.print_hypers(model)
+                model.print_hypers()
     
         self.best_x,self.best_y = model.get_best_params()
+        
+        if self.save_best : self.save_bests()
 
         return self.best_x,self.best_y
                 
+
+
+
 

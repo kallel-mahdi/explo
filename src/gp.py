@@ -1,71 +1,53 @@
+import logging
+import logging.config
+
+import gpytorch
 import torch
 from botorch.models.gpytorch import GPyTorchModel
 from gpytorch.distributions import MultivariateNormal
 from gpytorch.means import ConstantMean
 from gpytorch.models import ExactGP
 
-#######
-from src.kernels import *
-import gpytorch
+from src.kernels import StateKernel, setup_kernel
+
+logging.config.fileConfig('logging.conf')
+logger = logging.getLogger("ShapeLog."+__name__)
 
 class MyGP(ExactGP,GPyTorchModel):
     
     _num_outputs = 1
     
     def __init__(self, train_x, train_y,train_s,
-                noise_constraint=None,
-                noise_hyperprior=None,
-                lengthscale_constraint=None,
-                lengthscale_hyperprior=None,
-                outputscale_constraint=None,
-                outputscale_hyperprior=None,
-                ard_num_dims=None,
-                N_max=None,
-                prior_mean=0,
-                mlp=None,use_ard=False
+                kernel_config,likelihood_config,
+                mlp=None,
                 ):
-        
-        
-        
-        # self.covar_module = self.setup_kernel(kernel_name,ard_num_dims,use_ard,
-        #                                       mlp,train_s)
-        
         
         self.x_hist = train_x.clone()
         self.y_hist = train_y.clone()
         
+        #### maybe add this to kernel
+
         likelihood = gpytorch.likelihoods.GaussianLikelihood(
-            noise_constraint=noise_constraint,noise_hyperprior=noise_hyperprior
+            **likelihood_config
         )
         
-        ### Use fixed (unoptimizable) noise
+        ## Use fixed (unoptimizable) noise
         # likelihood.noise_covar.noise = 0.01
         # likelihood.noise_covar.raw_noise.requires_grad = False
-        ###
         
+        ######
+     
         ExactGP.__init__(self,train_x, train_y, likelihood)
-        self.mean_module = ConstantMean()
         
-        self.mean_module = gpytorch.means.ConstantMean()
-        self.covar_module = gpytorch.kernels.ScaleKernel(
-            gpytorch.kernels.RBFKernel(
-                ard_num_dims=ard_num_dims,
-                lengthscale_prior=lengthscale_hyperprior,
-                lengthscale_constraint=lengthscale_constraint,
-            ),
-            outputscale_prior=outputscale_hyperprior,
-            outputscale_constraint=outputscale_constraint,
-        )
-        
-        # Initialize lengthscale and outputscale to mean of priors.
-        if lengthscale_hyperprior is not None:
-            self.covar_module.base_kernel.lengthscale = lengthscale_hyperprior.mean
-        if outputscale_hyperprior is not None:
-            self.covar_module.outputscale = outputscale_hyperprior.mean
-        
+        self.N_max = kernel_config.pop('N_max')
+        self.mean_module = ConstantMean() ## prior mean = 0
+        self.covar_module = setup_kernel(kernel_config,mlp=mlp,train_s=train_s)
+
         self.N = train_x.shape[0]
         self.D = train_x.shape[1] 
-        self.N_max = N_max  
+
+        
+        print(f' Using {self.N_max} last points to compute GP')
         
         
     def update_train_data(self,new_x, new_y,new_s,strict=False):
@@ -88,30 +70,30 @@ class MyGP(ExactGP,GPyTorchModel):
 
     def forward(self, x):
         
-        mean_x = self.mean_module(x)
-        covar_x = self.covar_module(x)
-        return MultivariateNormal(mean_x, covar_x)
-    
+        
+        logger.debug(f'x.shape {x.shape}')
+        
+        with gpytorch.settings.debug(state=False):
+            
+            mean_x = self.mean_module(x)
+            covar_x = self.covar_module(x)
+            return MultivariateNormal(mean_x, covar_x)
+        
     def get_best_params(self):
             
         argmax = torch.argmax(self.y_hist)
         best_x = self.x_hist[argmax]
         best_y = self.y_hist[argmax]
         return best_x,best_y
-    
-    def setup_kernel(self,kernel_name,ard_num_dims,use_ard,mlp,train_s):
+  
+    def print_hypers(self):
         
-        if kernel_name == "rbf":
-            kernel = MyRBFKernel(ard_num_dims,use_ard)
-        elif kernel_name == "matern":
-            kernel = MyMaternKernel(ard_num_dims,use_ard)    
-        elif kernel_name == "grid":
-            kernel = GridKernel(mlp,train_s)
-            
-        else: raise ValueError("Unknown kernel")
-        
-        return kernel
-
+        print("##############################")
+        print(f'covar_lengthscale max {self.covar_module.base_kernel.lengthscale.max()} / min {self.covar_module.base_kernel.lengthscale.min()}  \
+                covar_outputscale {self.covar_module.outputscale.item()} \
+                noise {self.likelihood.noise_covar.noise.item()}')
+        print("##############################")
+                
 
 ### FOR GIBO
 class DEGP(MyGP):
