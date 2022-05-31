@@ -124,7 +124,7 @@ class DEGP(MyGP):
         L_inv_upper = self.prediction_strategy.covar_cache.detach()
         return L_inv_upper @ L_inv_upper.transpose(0, 1)
 
-    def _get_KxX_dx(self, theta_t):
+    def _get_KxX_dx(self, x):
         """Computes the analytic derivative of the kernel K(x,X) w.r.t. x.
 
         Args:
@@ -133,15 +133,20 @@ class DEGP(MyGP):
         Returns:
             (n x D) The derivative of K(x,X) w.r.t. x.
         """
-        X_hat = self.train_inputs[0]
-        jacobs = torch.autograd.functional.jacobian(func=lambda theta : self.covar_module(theta,X_hat).evaluate(),
-                                                    inputs=(theta_t))
-        K_θX_dθ = jacobs.sum(dim=2).transpose(1,2)
+        X = self.train_inputs[0]
+        n = x.shape[0]
+        K_xX = self.covar_module(x, X).evaluate()
+        lengthscale = self.covar_module.base_kernel.lengthscale.detach()
+        return (
+            -torch.eye(self.D, device=x.device)
+            / lengthscale ** 2
+            @ (
+                (x.view(n, 1, self.D) - X.view(1, self.N, self.D))
+                * K_xX.view(n, self.N, 1)
+            ).transpose(1, 2)
+        )
 
-        return K_θX_dθ
-        
-
-    def _get_Kxx_dx2(self,theta_t):
+    def _get_Kxx_dx2(self):
         """Computes the analytic second derivative of the kernel K(x,x) w.r.t. x.
 
         Args:
@@ -150,15 +155,13 @@ class DEGP(MyGP):
         Returns:
             (n x D x D) The second derivative of K(x,x) w.r.t. x.
         """
-       
-        theta_t2 = theta_t.clone().detach() ## hotfix otherwise 0 hessian
-        hessian = torch.autograd.functional.hessian(func=lambda theta : self.covar_module(theta_t,theta_t2).evaluate(),
-                                                    inputs=(theta_t))
-    
-        return -hessian.squeeze()
-    
+        lengthscale = self.covar_module.base_kernel.lengthscale.detach()
+        sigma_f = self.covar_module.outputscale.detach()
+        return (
+            torch.eye(self.D, device=lengthscale.device) / lengthscale ** 2
+        ) * sigma_f
 
-    def posterior_derivative(self,theta_t):
+    def posterior_derivative(self, x):
         """Computes the posterior of the derivative of the GP w.r.t. the given test
         points x.
 
@@ -169,16 +172,13 @@ class DEGP(MyGP):
             A GPyTorchPosterior.
         """
         if self.prediction_strategy is None:
-            self.posterior(theta_t)  # hotfix 
+            self.posterior(x)  # hotfix 
             
-        K_xX_dx = self._get_KxX_dx(theta_t)
-        Kxx_dx2 = self._get_Kxx_dx2(theta_t)
-        KXX_inv = self.get_KXX_inv()
-        
-        mean_d = K_xX_dx @ KXX_inv @ self.train_targets
-        
-        variance_d =  Kxx_dx2 - K_xX_dx @ KXX_inv @ K_xX_dx.transpose(1, 2)
-                    
+        K_xX_dx = self._get_KxX_dx(x)
+        mean_d = K_xX_dx @ self.get_KXX_inv() @ self.train_targets
+        variance_d = (
+            self._get_Kxx_dx2() - K_xX_dx @ self.get_KXX_inv() @ K_xX_dx.transpose(1, 2)
+        )
         variance_d = variance_d.clamp_min(1e-9)
 
         return mean_d, variance_d
