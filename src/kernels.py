@@ -73,8 +73,6 @@ class StateKernel(MyRBFKernel):
                 outputscale_constraint=None,
                 outputscale_hyperprior=None):
                 
-
-        
         """
         
         ard_num_dims : in this kernel it's the number of states to take.
@@ -82,30 +80,41 @@ class StateKernel(MyRBFKernel):
         
         """
         
-        self.args = deepcopy(locals())
+        self.train_s = None
+        self.mlp = None
+        self.orig_args = locals().copy()        
         self.n_actions = mlp.n_actions
-        self.mlp = mlp
-        self.reset(train_s)
+        self.reset(train_s,mlp)
+
+    def get_rbf_args(self,train_s):
         
-    
-    def reset(self,train_s):
+        args = self.orig_args.copy()
         
-        args = self.args.copy()
-        del args["ard_num_dims"]
+        ### rewrite ard_num_dims
+        args["ard_num_dims"] = args["train_s"].shape[0] * args["mlp"].n_actions
         del args["train_s"]
         del args["self"]
         del args["mlp"]
-        print(args)
+        
+        return args
         
         
-        ard_num_dims = train_s.shape[0] * self.n_actions
+    
+    def reset(self,train_s,mlp):
         
-        super().__init__(ard_num_dims,**args)
+        print(f"resetting trainig data of StateKernel")
+        
+        
+        rbf_args = self.get_rbf_args(train_s)
+        super().__init__(**rbf_args)
+        self.__dict__.update(**rbf_args)
         
         self.states = train_s
-    
+        self.mlp = mlp
         
-
+        print(f'new train_s shape {train_s.shape}')
+        
+    
     def test_policy(self,params_batch,states):
         
         logger.debug(f'mlp :params_batch.shape{params_batch.shape} states.shape {states.shape}')
@@ -196,29 +205,6 @@ class GridKernel(StateKernel):
         ### update only if new boundaries
         if any(high>self.high) or any(low<self.low):
             self.update_states(tmp_buff)
-
-
-class MyMaternKernel(Kernel):
-    
-    def __init__(self,ard_num_dims,use_ard=False):
-        
-        super().__init__()
-        if not use_ard: ard_num_dims = None
-        self.kernel = ScaleKernel(
-                MaternKernel(
-                    nu=2.5,
-                    ard_num_dims=ard_num_dims,
-                    lengthscale_prior=GammaPrior(3.0, 6.0)),
-                outputscale_prior=GammaPrior(2.0, 0.15),
-            )
-       
-    """Toy kernel for warningging"""
-    def forward(self,x1,x2,**params):
-        
-        logger.debug(f'x1 {x1.shape} / x2 {x2.shape}')
-        kernel = self.kernel.forward(x1,x2,**params)
-        logger.debug(f'pair kernel {kernel.shape}')
-        return kernel
 
 def setup_kernel(kernel_config,mlp,train_s):
     

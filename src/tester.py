@@ -126,7 +126,7 @@ class Tester:
             if use_opt_states:
                 
                 print(f'kernel states {opt_states.shape}')
-                model.covar_module.reset(opt_states)
+                model.covar_module.reset(opt_states,model.mlp)
             
             else : ### kernel has already generated grid
                 

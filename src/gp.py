@@ -44,6 +44,7 @@ class MyGP(ExactGP,GPyTorchModel):
 
         self.N = train_x.shape[0]
         self.D = train_x.shape[1] 
+        self.mlp = mlp
 
     
     #def set_train_data(self,train_x,train_y,train_s)
