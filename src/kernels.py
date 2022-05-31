@@ -7,18 +7,20 @@ import torch
 from gpytorch.kernels import Kernel, MaternKernel, RBFKernel, ScaleKernel
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from gpytorch.priors.torch_priors import GammaPrior
+from copy import deepcopy
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger("ShapeLog."+__name__)
 
-from gpytorch.settings import debug
 
+
+from gpytorch.settings import debug
 debug._set_state(False) ##hotfix for GridKernel to inherit ScaleKernel
 
 class MyRBFKernel(ScaleKernel):
         
     
-    def __init__(self,ard_num_dims,use_ard=True,
+    def __init__(self,ard_num_dims,use_ard,
                 noise_constraint=None,
                 noise_hyperprior=None,
                 lengthscale_constraint=None,
@@ -47,7 +49,6 @@ class MyRBFKernel(ScaleKernel):
         if outputscale_hyperprior is not None:
             self.outputscale = outputscale_hyperprior.mean  
         
-    """Toy kernel for warningging"""
     def forward(self,x1,x2,**params):
         
 
@@ -64,14 +65,14 @@ class StateKernel(MyRBFKernel):
     """
     
     def __init__(self,mlp,train_s,
-                ard_num_dims,use_ard=False,
+                ard_num_dims,use_ard,
                 noise_constraint=None,
                 noise_hyperprior=None,
                 lengthscale_constraint=None,
                 lengthscale_hyperprior=None,
                 outputscale_constraint=None,
-                outputscale_hyperprior=None
-                ):
+                outputscale_hyperprior=None):
+                
 
         
         """
@@ -81,19 +82,28 @@ class StateKernel(MyRBFKernel):
         
         """
         
-        super().__init__(ard_num_dims,use_ard,
-                noise_constraint,
-                noise_hyperprior,
-                lengthscale_constraint,
-                lengthscale_hyperprior,
-                outputscale_constraint,
-                outputscale_hyperprior)
-        
-        self.ard_num_dims = ard_num_dims
+        self.args = deepcopy(locals())
         self.n_actions = mlp.n_actions
-        n_states = self.update_states(train_s)
-
-        self.__dict__.update(locals())
+        self.mlp = mlp
+        self.reset(train_s)
+        
+    
+    def reset(self,train_s):
+        
+        args = self.args.copy()
+        del args["ard_num_dims"]
+        del args["train_s"]
+        del args["self"]
+        del args["mlp"]
+        print(args)
+        
+        
+        ard_num_dims = train_s.shape[0] * self.n_actions
+        
+        super().__init__(ard_num_dims,**args)
+        
+        self.states = train_s
+    
         
 
     def test_policy(self,params_batch,states):
@@ -120,7 +130,7 @@ class StateKernel(MyRBFKernel):
         
         return kernel 
     
-    
+        
     def update_states(self,new_s):
         
         raise NotImplementedError
@@ -174,7 +184,6 @@ class GridKernel(StateKernel):
         
         return n_states
         
-        #print(f'observation box : \n low {self.low} \n high :{self.high} \n grid shape {self.states.shape}')
     
     def update(self,new_s):
         

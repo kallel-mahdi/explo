@@ -71,9 +71,10 @@ def get_configs(env_name,kernel_name):
             }
 
     kernel_config = {
-            "use_ard":True,
+            "use_ard":False,
             "kernel_name":kernel_name,
             ## in case of gridkernel ard_num_dims is number of state samples
+            ## ard_num_dims = n_actions * n_states (to be fixed soon)
             "ard_num_dims": 1000 if kernel_name =="grid" else env_appx_config["ard_num_dims"],
             "lengthscale_hyperprior":gpytorch.priors.torch_priors.GammaPrior(3.0,6.0),
             "lengthscale_constraint":gpytorch.constraints.constraints.GreaterThan(0.001),

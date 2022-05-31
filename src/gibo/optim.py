@@ -2,10 +2,9 @@ import botorch
 import torch
 from botorch.fit import fit_gpytorch_model
 from gpytorch.mlls import ExactMarginalLogLikelihood
-#from src.gibo.acqf import GradientInformation
+from src.gibo.acqf import GradientInformation
+from torch.optim import LBFGS
 
-from src.gibo.acqf2 import GradientInformation
-from torch.optim import  LBFGS
 
 class GIBOptimizer(object):
         

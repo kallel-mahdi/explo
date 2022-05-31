@@ -19,7 +19,7 @@ torch.manual_seed(0)
 class Tester:
     
     def __init__(self,model,objective_env,
-                 local_opt,delta,
+                 local_opt,use_opt_states,delta,
                  n_train,n_test,n_episodes
                  ):
         
@@ -57,12 +57,11 @@ class Tester:
         train_x,test_x = train_test_split(data_x,test_size=n_test)
         train_data = self.run_params(train_x)
         test_data = self.run_params(test_x)
-        _,kernel_states = self.objective_env(local_opt.reshape(1,-1))
-        print(f'kernel states {kernel_states.shape}')
+        _,opt_states = self.objective_env(local_opt.reshape(1,-1))
         
         print(f'Done generating data')
         
-        return train_data,test_data,kernel_states
+        return train_data,test_data,opt_states
     
   
     def run_params(self,x):
@@ -119,19 +118,26 @@ class Tester:
         
         return y_hat,lower,upper
     
-    def fit(self,model,train_x,train_y,kernel_states):
-        
-        model.train()
-        model.likelihood.train()
+    def fit(self,model,train_x,train_y,
+            opt_states,use_opt_states):
         
         if isinstance(model.covar_module,StateKernel):
             
-            print(f'kernel states 2 {kernel_states.shape}')
-            model.covar_module.states = kernel_states[:5]
+            if use_opt_states:
+                
+                print(f'kernel states {opt_states.shape}')
+                model.covar_module.reset(opt_states)
+            
+            else : ### kernel has already generated grid
+                
+                print(f'{model.covar_module.states.shape}')
+        
+        model.set_train_data(inputs=train_x,targets=train_y,strict=False)
+        model.train()
+        model.likelihood.train()
         
         ### Check hypers before training
         model.print_hypers()
-        model.set_train_data(inputs=train_x,targets=train_y,strict=False)
         mll = ExactMarginalLogLikelihood(model.likelihood, model)
         fit_gpytorch_model(mll)
         
@@ -145,14 +151,14 @@ class Tester:
         
         # create data around optimum
         
-        train_data,test_data,kernel_states = self.generate_data(
+        train_data,test_data,opt_states = self.generate_data(
                     self.local_opt,self.delta,
                     self.n_train,self.n_test)        
         
         # fit model locally
         train_x,train_y,train_s = train_data
     
-        model,tmp = self.fit(self.model,train_x,train_y,kernel_states)
+        model,tmp = self.fit(self.model,train_x,train_y,opt_states,self.use_opt_states)
 
         # generate predictions for test observations
         
