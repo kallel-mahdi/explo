@@ -44,7 +44,7 @@ class BOptimizer(object):
       
       assert not new_x.requires_grad    
       ### Update training points.
-      model.update_train_data(new_x,new_y,new_s, strict=False)
+      model.append_train_data(new_x,new_y,new_s, strict=False)
       
       return new_x,new_y,new_s
   

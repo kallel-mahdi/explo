@@ -8,6 +8,7 @@ import torch
 from botorch.fit import fit_gpytorch_model
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from sklearn.metrics import mean_absolute_error as mae
+from sklearn.metrics import mean_squared_error as mse
 from sklearn.model_selection import train_test_split
 
 from src.kernels import StateKernel
@@ -43,8 +44,19 @@ class Tester:
             
         print(f' intial local opt reward : {sum(rewards)/len(rewards)}')
                 
-                
-    def generate_data(self,local_opt,delta,n_train,n_test):
+    def run_params(self,x):
+            
+        tmp = [self.objective_env(p,self.n_episodes) for p in x]
+        y = torch.Tensor([d[0] for d in tmp]).reshape(-1)  ## [n_trials,1]
+        s = torch.stack( [d[1] for d in tmp])  ## [n_trials,max_len,state_dim]
+        s = torch.flatten(s,start_dim=0,end_dim=1) ## [n_trials*max_len,state_dim]
+        
+        return (x,y,s)
+       
+    def generate_data(self):
+        
+        local_opt,delta = self.local_opt,self.delta
+        n_train,n_test = self.n_train,self.n_test
         
         print(f'Generating data')
         
@@ -64,15 +76,7 @@ class Tester:
         return train_data,test_data,opt_states
     
   
-    def run_params(self,x):
-        
-        tmp = [self.objective_env(p,self.n_episodes) for p in x]
-        y = torch.Tensor([d[0] for d in tmp]).reshape(-1)  ## [n_trials,1]
-        s = torch.stack( [d[1] for d in tmp])  ## [n_trials,max_len,state_dim]
-        s = torch.flatten(s,start_dim=0,end_dim=1) ## [n_trials*max_len,state_dim]
-        
-        return (x,y,s)
-    
+  
     def plot(self,data,pred_data,mll,best_x,title):
         
         ### get mean and confidence intervals from posterior
@@ -91,7 +95,7 @@ class Tester:
         plt.scatter(x_plot,y,label="true",color="red")
         #plt.errorbar(x_plot,y_hat,yerr = err,label="prediction",fmt="o")
         plt.errorbar(x_plot,y_hat,label="prediction",fmt="x")
-        plt.title(title+" MLL: "+str(mll)+'\n'+ "MAE"+str(mae(y,y_hat)))
+        plt.title(title+" MLL: "+str(mll)+'\n MAE'+str(mae(y,y_hat))+ '\n RMSE:'+str(mse(y,y_hat,squared=False)))
         plt.legend()
         plt.show()
         
@@ -121,18 +125,7 @@ class Tester:
     def fit(self,model,train_x,train_y,
             opt_states,use_opt_states):
         
-        if isinstance(model.covar_module,StateKernel):
-            
-            if use_opt_states:
-                
-                print(f'kernel states {opt_states.shape}')
-                model.covar_module.reset(opt_states,model.mlp)
-            
-            else : ### kernel has already generated grid
-                
-                print(f'{model.covar_module.states.shape}')
-        
-        model.set_train_data(inputs=train_x,targets=train_y,strict=False)
+        model.set_train_data(train_x,train_y,opt_states,strict=False)
         model.train()
         model.likelihood.train()
         
@@ -144,21 +137,15 @@ class Tester:
         ### Check hypers after training
         model.print_hypers()
         
-        return model,model(train_x)
+        return model
 
 
-    def run(self):
+    def run(self,train_data,test_data,opt_states):
         
-        # create data around optimum
-        
-        train_data,test_data,opt_states = self.generate_data(
-                    self.local_opt,self.delta,
-                    self.n_train,self.n_test)        
-        
+         
         # fit model locally
         train_x,train_y,train_s = train_data
-    
-        model,tmp = self.fit(self.model,train_x,train_y,opt_states,self.use_opt_states)
+        model = self.fit(self.model,train_x,train_y,opt_states,self.use_opt_states)
 
         # generate predictions for test observations
         
@@ -172,9 +159,11 @@ class Tester:
         
         self.plot(train_data,train_pred,train_mll,self.local_opt,title="train")
         self.plot(test_data,test_pred,test_mll,self.local_opt,title="test")
+        
+        opt_data = (self.local_opt,opt_states)
 
         
-        return train_data,train_pred,test_data,test_pred,tmp
+        return train_data,train_pred,test_data,test_pred,opt_data
     
     
     

@@ -84,7 +84,7 @@ class StateKernel(MyRBFKernel):
         self.mlp = None
         self.orig_args = locals().copy()        
         self.n_actions = mlp.n_actions
-        self.reset(train_s,mlp)
+        self.set_train_data(train_s,mlp)
 
     def get_rbf_args(self,train_s):
         
@@ -99,10 +99,9 @@ class StateKernel(MyRBFKernel):
         return args
         
         
-    
-    def reset(self,train_s,mlp):
+    def set_train_data(self,train_s,mlp):
         
-        print(f"resetting trainig data of StateKernel")
+        print(f"set_train_datating trainig data of StateKernel")
         
         
         rbf_args = self.get_rbf_args(train_s)
@@ -111,8 +110,12 @@ class StateKernel(MyRBFKernel):
         
         self.states = train_s
         self.mlp = mlp
+    
+    
+    def append_train_data(self,new_s,mlp):
         
-        print(f'new train_s shape {train_s.shape}')
+        print(f'Statekernel:do not abuse this function')
+        self.set_train_data(train_s,mlp)
         
     
     def test_policy(self,params_batch,states):
@@ -128,7 +131,6 @@ class StateKernel(MyRBFKernel):
         
         
         logger.debug(f'x1 {x1.shape} / x2 {x2.shape}')
-        
         #Evaluate current parameters
         actions1 = self.test_policy(x1,self.states)
         actions2 = self.test_policy(x2,self.states)
@@ -139,16 +141,7 @@ class StateKernel(MyRBFKernel):
         
         return kernel 
     
-        
-    def update_states(self,new_s):
-        
-        raise NotImplementedError
-    
-    def update(self,new_s):
-        
-        raise NotImplementedError
-    
-    
+
 class GridKernel(StateKernel):
     
     """ a statekernel that uses a grid over state space to 
@@ -182,7 +175,7 @@ class GridKernel(StateKernel):
         
         return data
     
-    def update_states(self,new_s):
+    def get_new_states(self,new_s):
         
         self.high,_= torch.max(new_s,dim=0)
         self.low,_= torch.min(new_s,dim=0)
@@ -194,7 +187,7 @@ class GridKernel(StateKernel):
         return n_states
         
     
-    def update(self,new_s):
+    def append_train_data(self,new_s):
         
         tmp_buff = torch.cat([self.states, new_s])
         high,_= torch.max(tmp_buff,dim=0)
@@ -204,7 +197,9 @@ class GridKernel(StateKernel):
         
         ### update only if new boundaries
         if any(high>self.high) or any(low<self.low):
-            self.update_states(tmp_buff)
+            self.get_new_states(tmp_buff)
+            
+            
 
 def setup_kernel(kernel_config,mlp,train_s):
     
@@ -217,6 +212,10 @@ def setup_kernel(kernel_config,mlp,train_s):
     elif kernel_name == "grid":
         
         kernel = GridKernel(**kernel_config,mlp=mlp,train_s=train_s)
+    
+    elif kernel_name == "state":
+            
+        kernel = StateKernel(**kernel_config,mlp=mlp,train_s=train_s)
     
     else : raise ValueError("Unknown kernel")
     
