@@ -13,10 +13,14 @@ from gpytorch.priors.torch_priors import GammaPrior
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger("ShapeLog."+__name__)
 
+from gpytorch.settings import debug
+
+debug._set_state(False) ##hotfix for GridKernel to inherit ScaleKernel
+
 class MyRBFKernel(ScaleKernel):
         
     
-    def __init__(self,ard_num_dims,use_ard,
+    def __init__(self,ard_num_dims,use_ard=True,
                 noise_constraint=None,
                 noise_hyperprior=None,
                 lengthscale_constraint=None,
@@ -45,12 +49,16 @@ class MyRBFKernel(ScaleKernel):
         if outputscale_hyperprior is not None:
             self.outputscale = outputscale_hyperprior.mean  
         
+    """Toy kernel for warningging"""
     def forward(self,x1,x2,**params):
+        
+
         
         logger.debug(f'x1 {x1.shape} / x2 {x2.shape}')
         rslt = super().forward(x1,x2,**params)
         logger.debug(f'pair rslt {rslt.shape}')
         return rslt
+
 
 
 class StateKernel(Kernel):
@@ -102,24 +110,11 @@ class StateKernel(Kernel):
             
         raise NotImplementedError
     
-         
-        # logger.debug(f'x1 {x1.shape} / x2 {x2.shape}')
-        # #Evaluate current parameters
-        # actions1 = self.test_policy(x1,self.states)
-        # actions2 = self.test_policy(x2,self.states)
-        # logger.debug(f'actions1 {actions1.shape} actions2 {actions2.shape} ')
-        # # Compute pairwise pairwise kernel 
-        # kernel = super().forward(actions1, actions2, **params)
-        # logger.debug(f'pair kernel {kernel.shape}')
-        
-        # return kernel 
-    
     
     def set_train_data(self,train_s,mlp):
         
         
         kernel_args = self.get_kernel_args(train_s)
-        #super().__init__(**kernel_args)
         self.build_kernel(**kernel_args)
         self.__dict__.update(**kernel_args)
         

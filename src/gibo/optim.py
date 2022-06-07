@@ -5,8 +5,7 @@ from gpytorch.mlls import ExactMarginalLogLikelihood
 from src.gibo.acqf import GradientInformation
 from torch.optim import LBFGS
 from src.optim import my_fit_gpytorch_model
-
-
+from src.kernels import  * ## delte later
 import logging
 import logging.config
 
@@ -52,7 +51,7 @@ class GIBOptimizer(object):
             
             # Update training points.
             new_y,new_s = objective_env(new_x,self.n_eval)
-            model.update_train_data(new_x,new_y,new_s, strict=False)
+            model.append_train_data(new_x,new_y, strict=False) ## right now we do not add new_s for info
             model.posterior(self.theta_i)  ## hotfix
             self.gradInfo.update_K_xX_dx()
 
@@ -81,7 +80,7 @@ class GIBOptimizer(object):
  
         # Evaluate current parameters
         new_y,new_s = objective_env(theta_i,self.n_eval)
-        model.update_train_data(theta_i,new_y,new_s, strict=False)
+        model.append_train_data(theta_i,new_y,new_s, strict=False)
         self.gradInfo.update_theta_i(theta_i)
         
         # Only optimize model hyperparameters if N >= n_max.
@@ -90,11 +89,11 @@ class GIBOptimizer(object):
             # Adjust hyperparameters
             mll = ExactMarginalLogLikelihood(model.likelihood, model)
             fit_gpytorch_model(mll)
+            
             # Restrict data to only recent points
             last_x = model.train_inputs[0][-self.n_max:]
             last_y = model.train_targets[-self.n_max:]
-            model.set_train_data(inputs=last_x,targets=last_y,strict=False)
-            model.N = last_x.shape[0]
+            model.set_train_data(last_x,last_y,strict=False)
             model.posterior(self.theta_i)  ## hotfix
             self.gradInfo.update_K_xX_dx() ## hotfix
         

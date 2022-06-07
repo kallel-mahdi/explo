@@ -4,6 +4,7 @@ import logging.config
 import gpytorch
 import torch
 from botorch.models.gpytorch import GPyTorchModel
+from gpytorch import ExactMarginalLogLikelihood
 from gpytorch.distributions import MultivariateNormal
 from gpytorch.means import ConstantMean
 from gpytorch.models import ExactGP
@@ -47,38 +48,20 @@ class MyGP(ExactGP,GPyTorchModel):
         self.mlp = mlp
 
     
-    # def set_train_data(self,train_x,train_y,train_s=None,strict=False):
+    def set_train_data(self,train_x,train_y,train_s=None,strict=False):
         
-    #     ExactGP.set_train_data(self,inputs=train_x,targets=train_y,strict=strict)
-    #     self.N = train_x.shape[0]
+        ExactGP.set_train_data(self,inputs=train_x,targets=train_y,strict=strict)
+        self.N = train_x.shape[0]
         
-    #     if  isinstance(self.covar_module,StateKernel) and not (train_s is None):
+        if  isinstance(self.covar_module,StateKernel) and not (train_s is None):
             
-    #         self.covar_module.set_train_data(train_s,self.mlp)
+            self.covar_module.set_train_data(train_s,self.mlp)
             
         
-    # def append_train_data(self,new_x, new_y,new_s=None,strict=False):
+    def append_train_data(self,new_x, new_y,new_s=None,strict=False):
         
-    #     """updates only train_x and train_y (maybe eventually add train_s)
-    #     """
-        
-    #     ### concatenate new data
-    #     train_x = torch.cat([self.train_inputs[0], new_x])
-    #     train_y = torch.cat([self.train_targets, new_y])
-        
-    #     ExactGP.set_train_data(self,inputs=train_x,targets=train_y,strict=strict)
-    #     self.N = train_x.shape[0]
-        
-    #     ### update history 
-    #     self.x_hist = torch.cat([self.x_hist, new_x])
-    #     self.y_hist = torch.cat([self.y_hist, new_y])
-        
-    #     ### update state kernels with new states
-    #     if isinstance(self.covar_module,StateKernel) and not(new_s is None):
-    #         self.covar_module.append_train_data(new_s,self.mlp)
-    
-        
-    def update_train_data(self,new_x, new_y,new_s,strict=False):
+        """updates only train_x and train_y (maybe eventually add train_s)
+        """
         
         ### concatenate new data
         train_x = torch.cat([self.train_inputs[0], new_x])
@@ -92,9 +75,11 @@ class MyGP(ExactGP,GPyTorchModel):
         self.y_hist = torch.cat([self.y_hist, new_y])
         
         ### update state kernels with new states
-        if isinstance(self.covar_module,StateKernel):
-            self.covar_module.update(new_s)
-            
+        if isinstance(self.covar_module,StateKernel) and not(new_s is None):
+            self.covar_module.append_train_data(new_s,self.mlp)
+    
+        
+
 
     def forward(self, x):
         
@@ -130,7 +115,16 @@ class MyGP(ExactGP,GPyTorchModel):
             print("##############################")
             print(f'covar_lengthscale max {self.covar_module.lengthscales.max()} / min {self.covar_module.lengthscales.min()}')                  
             print("##############################")
-            
+    
+    def print_train_mll(self):
+        
+        self.posterior(self.train_inputs[0][-1].reshape(1,-1))  ## hotfix
+        mll = ExactMarginalLogLikelihood(self.likelihood, self)
+        train_x = self.train_inputs[0]
+        train_y = self.train_targets
+        print(f'MLL : {mll(self(train_x),train_y).item()}')
+        self.posterior(self.train_inputs[0][-1].reshape(1,-1))  ## hotfix
+                    
         
                 
 
