@@ -4,6 +4,15 @@ from botorch.fit import fit_gpytorch_model
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from src.gibo.acqf import GradientInformation
 from torch.optim import LBFGS
+from src.optim import my_fit_gpytorch_model
+
+
+import logging
+import logging.config
+
+logging.config.fileConfig('logging.conf')
+logger = logging.getLogger("ShapeLog."+__name__)
+
 
 
 class GIBOptimizer(object):
@@ -21,12 +30,16 @@ class GIBOptimizer(object):
         
         self.__dict__.update(locals())
         
-        print(f' Gibo will use {self.n_max} last points to fit GP and {self.n_info_samples} info samples')
+        #print(f' Gibo will use {self.n_max} last points to fit GP and {self.n_info_samples} info samples')
         
     def optimize_information(self,objective_env,model,bounds):
+        
+        #print("optimizing information")
     
         ## Optimize gradient information locally
         for _ in range(self.n_info_samples):
+            
+            #print("one point of information")
 
             model.posterior(self.theta_i)  ## hotfix
 
@@ -43,10 +56,12 @@ class GIBOptimizer(object):
             
             # Update training points.
             new_y,new_s = objective_env(new_x,self.n_eval)
-            model.append_train_data(new_x,new_y, strict=False) ## do not add new_s (for the moment)
+            model.append_train_data(new_x,new_y,strict=False) ## do not add new_s (for the moment)
             model.posterior(self.theta_i)  ## hotfix
             self.gradInfo.update_K_xX_dx()
 
+
+        #print("done optimizing information")
     def one_gradient_step(self,model,theta_i):
         
         ## compute gradients manually
@@ -78,16 +93,20 @@ class GIBOptimizer(object):
         # Only optimize model hyperparameters if N >= n_max.
         if (model.N >= self.n_max): 
             
-            # Adjust hyperparameters
+           
+            ## Adjust hyperparameters
             mll = ExactMarginalLogLikelihood(model.likelihood, model)
             fit_gpytorch_model(mll)
-            # Restrict data to only recent points
+            #my_fit_gpytorch_model(model)
+            
+            ## Restrict data to only recent points
             last_x = model.train_inputs[0][-self.n_max:]
             last_y = model.train_targets[-self.n_max:]
-            model.set_train_data(last_x,last_y,new_s,strict=False)## here we add new_s (although not necessary)
+            model.set_train_data(last_x,last_y,strict=False)## here we add new_s (although not necessary)
             model.posterior(self.theta_i)  ## hotfix
             self.gradInfo.update_K_xX_dx() ## hotfix
-        
+            
+
         # Sample locally to optimize gradient information
         bounds = torch.tensor([[-self.delta], [self.delta]]) + theta_i
         self.optimize_information(objective_env,model,bounds)

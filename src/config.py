@@ -71,7 +71,7 @@ def get_configs(env_name,kernel_name):
             }
 
     kernel_config = {
-            "use_ard":False,
+            "use_ard":True,
             "kernel_name":kernel_name,
             ## in case of gridkernel ard_num_dims is number of state samples
             ## ard_num_dims = n_actions * n_states (to be fixed soon)

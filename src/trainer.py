@@ -9,7 +9,6 @@ class Trainer:
     def __init__(self,model,objective_env,optimizer,
                  n_steps,report_freq,save_best=False,):
         
-        #optimizer = BOptimizer()
         self.__dict__.update(locals())
     
     

@@ -8,7 +8,7 @@ from gpytorch.distributions import MultivariateNormal
 from gpytorch.means import ConstantMean
 from gpytorch.models import ExactGP
 
-from src.kernels import StateKernel, setup_kernel
+from src.kernels import *
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger("ShapeLog."+__name__)
@@ -98,11 +98,21 @@ class MyGP(ExactGP,GPyTorchModel):
   
     def print_hypers(self):
         
-        print("##############################")
-        print(f'covar_lengthscale max {self.covar_module.base_kernel.lengthscale.max()} / min {self.covar_module.base_kernel.lengthscale.min()}  \
-                covar_outputscale {self.covar_module.outputscale.item()} \
-                noise {self.likelihood.noise_covar.noise.item()}')
-        print("##############################")
+        
+        if isinstance(self.covar_module,MyRBFKernel):
+                
+            print("##############################")
+            print(f'covar_lengthscale max {self.covar_module.base_kernel.lengthscale.max()} / min {self.covar_module.base_kernel.lengthscale.min()}  \
+                    covar_outputscale {self.covar_module.outputscale.item()} \
+                    noise {self.likelihood.noise_covar.noise.item()}')
+            print("##############################")
+        
+        elif isinstance(self.covar_module,LinearStateKernel):
+        
+            print("##############################")
+            print(f'covar_lengthscale max {self.covar_module.lengthscales.max()} / min {self.covar_module.lengthscales.min()}')                  
+            print("##############################")
+            
         
                 
 

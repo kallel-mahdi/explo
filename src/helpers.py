@@ -9,7 +9,7 @@ from gym.spaces.discrete import Discrete
 
 from src.environment import EnvironmentObjective
 from src.gp import DEGP, MyGP
-from src.kernels import GridKernel, MyRBFKernel
+from src.kernels import *
 from src.policy import MLP
 
 logging.config.fileConfig('logging.conf')
