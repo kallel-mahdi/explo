@@ -167,6 +167,9 @@ class LinearStateKernel(StateKernel):
 def setup_kernel(kernel_config,mlp,train_s):
     
     kernel_name = kernel_config.pop("kernel_name")
+    kernel_config["ard_num_dims"]=mlp.len_params
+    
+    print(f'Using ard_num_dims = {mlp.len_params}')
     
     if kernel_name == "rbf":
         

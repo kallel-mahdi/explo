@@ -78,8 +78,6 @@ class MyGP(ExactGP,GPyTorchModel):
         if isinstance(self.covar_module,StateKernel) and not(new_s is None):
             self.covar_module.append_train_data(new_s,self.mlp)
     
-        
-
 
     def forward(self, x):
         
@@ -115,6 +113,9 @@ class MyGP(ExactGP,GPyTorchModel):
             print("##############################")
             print(f'covar_lengthscale max {self.covar_module.lengthscales.max()} / min {self.covar_module.lengthscales.min()}')                  
             print("##############################")
+            
+        
+        print("last parameters",self.x_hist[-1])
     
     def print_train_mll(self):
         

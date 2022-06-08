@@ -15,9 +15,11 @@ class Trainer:
     def save_bests(self):
 
         task_name = self.objective_env.env.spec.id
-        ckpt_path = "/home/q123/Desktop/explo/local_optima/"+task_name
+        ckpt_path = "/home/q123/Desktop/explo/local_optima/"+task_name+"_"+str(self.model.mlp.Ls)
+        
         
         with open(ckpt_path,'wb') as handle:
+            
     
             pickle.dump((self.best_x,self.best_y),handle)
             

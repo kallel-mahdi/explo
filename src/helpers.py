@@ -30,7 +30,7 @@ def get_initial_data(mlp,objective_env,n_init):
     
     return (train_x,train_y,train_s)
 
-def setup_policy(env):
+def setup_policy(env,additional_layers):
     
     n_inputs  = env.observation_space.shape[0]      
     action_space = env.action_space
@@ -42,18 +42,18 @@ def setup_policy(env):
         n_actions = action_space.shape[0]
     else : raise ValueError("Unknown action space")
     
-    logger.warning(f'MLP dimensions : {[n_inputs,n_actions]}')
-    mlp = MLP([n_inputs,n_actions],add_bias=True)
+    logger.warning(f'MLP dimensions : {[n_inputs] +additional_layers + [n_actions]}')
+    mlp = MLP([n_inputs]+additional_layers+[n_actions],add_bias=True)
     
     return mlp
     
 def setup_experiment(env_config,
-                     kernel_config,likelihood_config):
+                     kernel_config,likelihood_config,additional_layers=[]):
     
     ### build environment and linear policy
     n_init = env_config.pop("n_init")
     env = gym.make(env_config["env_name"])
-    mlp = setup_policy(env)
+    mlp = setup_policy(env,additional_layers)
     
     ### objective env evaluates the policy episodically
     objective_env = EnvironmentObjective(

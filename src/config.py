@@ -13,12 +13,11 @@ def get_env_configs(env_name):
                 }
 
                 env_appx_config = {
-                        "ard_num_dims":5,## for kernel
+                        "ard_num_dims":None, ## set in setup_kernel
                         "n_max":20,## for giboptimizer
                         "n_info": 8
                 }
-
-
+                
         elif env_name == "Swimmer-v2":
 
                 env_config = {
@@ -30,7 +29,7 @@ def get_env_configs(env_name):
                 }
 
                 env_appx_config = {
-                        "ard_num_dims":18,
+                        "ard_num_dims":None, ## set in setup_kernel
                         "n_max":32,
                         "n_info": 16,
                 }
@@ -46,7 +45,7 @@ def get_env_configs(env_name):
 
                 env_appx_config = {
                         
-                        "ard_num_dims":36,
+                        "ard_num_dims":None, ## set in setup_kernel
                         "n_max":48,      
                         "n_info": 8,
                         

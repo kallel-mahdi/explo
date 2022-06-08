@@ -18,14 +18,15 @@ class GIBOptimizer(object):
         
     def __init__(self,model,n_eval,
                 n_max,n_info_samples,
-                normalize_gradient=True,standard_deviation_scaling=False,
-                delta=0.1,verbose= False):
+                normalize_gradient,standard_deviation_scaling,
+                delta):
 
         gradInfo = GradientInformation(model)
         theta_i = model.train_inputs[0][-1].reshape(1,-1)
         params_history = [theta_i.clone()]
         len_params = theta_i.shape[-1]
         optimizer_torch = torch.optim.SGD([theta_i], lr=0.5)
+        
         
         self.__dict__.update(locals())
         

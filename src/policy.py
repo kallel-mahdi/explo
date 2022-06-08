@@ -42,11 +42,12 @@ class MLP(torch.nn.Module):
         n_actions = Ls[-1]
         
         if nonlinearity is None:
+            #nonlinearity = torch.nn.ReLU()
             nonlinearity = torch.nn.Identity()
+            
         
         self.__dict__.update(locals())
         
-    
     def create_weights(self,params):
         
         weights,biases = [],[]
@@ -90,13 +91,12 @@ class MLP(torch.nn.Module):
             w_tmp = w @ outputs
             b_tmp = b.unsqueeze(-1).expand_as(w_tmp)
             outputs =  w_tmp + b_tmp
-            
-            ## no nonlinearity for last layer
+        
+        ## no nonlinearity for last layer
             if (i+1) < (self.n_layers) :
-                
                 outputs = self.nonlinearity(outputs)
                 
-        #logger.debug(f'actions {outputs.shape}')
+        logger.debug(f'MLP : actions {outputs.shape}')
         return outputs
     
             

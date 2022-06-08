@@ -51,6 +51,7 @@ class GradientInformation(botorch.acquisition.AnalyticAcquisitionFunction):
         Returns:
             (n x D) The derivative of K(x,X) w.r.t. x.
         '''
+        
         jacobs = torch.autograd.functional.jacobian(func=lambda theta : self.K_θX(theta,X_hat),inputs=(theta_t))
         K_θX_dθ = jacobs.sum(dim=2).transpose(1,2)
 

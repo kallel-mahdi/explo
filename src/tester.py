@@ -44,9 +44,9 @@ class Tester:
             
         print(f' intial local opt reward : {sum(rewards)/len(rewards)}')
                 
-    def run_params(self,x):
+    def run_params(self,x,n_episodes):
             
-        tmp = [self.objective_env(p,self.n_episodes) for p in x]
+        tmp = [self.objective_env(p,n_episodes) for p in x]
         y = torch.Tensor([d[0] for d in tmp]).reshape(-1)  ## [n_trials,1]
         s = torch.stack( [d[1] for d in tmp])  ## [n_trials,max_len,state_dim]
         s = torch.flatten(s,start_dim=0,end_dim=1) ## [n_trials*max_len,state_dim]
@@ -67,8 +67,8 @@ class Tester:
         
         ### split data
         train_x,test_x = train_test_split(data_x,test_size=n_test)
-        train_data = self.run_params(train_x)
-        test_data = self.run_params(test_x)
+        train_data = self.run_params(train_x,n_episodes=1) ## run train points only once
+        test_data = self.run_params(test_x,self.n_episodes) ## run test points multiple times to get real value
         _,opt_states = self.objective_env(local_opt.reshape(1,-1))
         
         print(f'Done generating data')
