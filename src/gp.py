@@ -4,6 +4,9 @@ import logging.config
 import gpytorch
 import torch
 from botorch.models.gpytorch import GPyTorchModel
+from botorch.models.gp_regression import SingleTaskGP
+from botorch.models.transforms.outcome import Standardize
+from botorch.models.transforms.input import InputStandardize
 from gpytorch import ExactMarginalLogLikelihood
 from gpytorch.distributions import MultivariateNormal
 from gpytorch.means import ConstantMean
@@ -14,7 +17,9 @@ from src.kernels import *
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger("ShapeLog."+__name__)
 
-class MyGP(ExactGP,GPyTorchModel):
+#class MyGP(ExactGP,GPyTorchModel):
+
+class MyGP(SingleTaskGP):
     
     _num_outputs = 1
     
@@ -37,11 +42,20 @@ class MyGP(ExactGP,GPyTorchModel):
         # likelihood.noise_covar.raw_noise.requires_grad = False
         
         ######
-     
-        ExactGP.__init__(self,train_x, train_y, likelihood)
-        
-        self.mean_module = ConstantMean() ## prior mean = 0
-        self.covar_module = setup_kernel(kernel_config,mlp=mlp,train_s=train_s)
+
+        print('train_y.shape',train_y.shape,train_y.squeeze().shape)
+        super().__init__(train_X = train_x, 
+                         train_Y= train_y.reshape(-1,1),
+                        likelihood= likelihood,
+                        mean_module =ConstantMean(), ## prior mean = 0
+                        covar_module = setup_kernel(kernel_config,mlp=mlp,train_s=train_s),
+                        #### NEWW NORMALIZATION
+                        # outcome_transform=Standardize(m=train_y.shape[-1]),
+                        # input_transform=InputStandardize(d=train_x.shape[-1])
+                        )
+    
+        # self.mean_module = ConstantMean() ## prior mean = 0
+        # self.covar_module = setup_kernel(kernel_config,mlp=mlp,train_s=train_s)
 
         self.N = train_x.shape[0]
         self.D = train_x.shape[1] 
@@ -50,7 +64,7 @@ class MyGP(ExactGP,GPyTorchModel):
     
     def set_train_data(self,train_x,train_y,train_s=None,strict=False):
         
-        ExactGP.set_train_data(self,inputs=train_x,targets=train_y,strict=strict)
+        super().set_train_data(inputs=train_x,targets=train_y,strict=strict)
         self.N = train_x.shape[0]
         
         if  isinstance(self.covar_module,StateKernel) and not (train_s is None):
@@ -67,7 +81,7 @@ class MyGP(ExactGP,GPyTorchModel):
         train_x = torch.cat([self.train_inputs[0], new_x])
         train_y = torch.cat([self.train_targets, new_y])
         
-        ExactGP.set_train_data(self,inputs=train_x,targets=train_y,strict=strict)
+        super().set_train_data(inputs=train_x,targets=train_y,strict=strict)
         self.N = train_x.shape[0]
         
         ### update history 

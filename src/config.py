@@ -6,7 +6,7 @@ def get_env_configs(env_name):
         if env_name == "CartPole-v1":
 
                 env_config = {
-                        "n_init" : 1,
+                        "n_init" : 2,
                         "reward_scale":500,
                         "reward_shift":0,
                         "env_name":"CartPole-v1",
@@ -21,7 +21,7 @@ def get_env_configs(env_name):
         elif env_name == "Swimmer-v2":
 
                 env_config = {
-                        "n_init" : 1,
+                        "n_init" : 2,
                         "reward_scale":350,
                         "reward_shift":0,
                         "env_name":"Swimmer-v2",
@@ -37,7 +37,7 @@ def get_env_configs(env_name):
         elif env_name == "Hopper-v2":
 
                 env_config = {
-                        "n_init" : 1,
+                        "n_init" : 2,
                         "reward_scale":1000,
                         "reward_shift":1,
                         "env_name":"Hopper-v2",
