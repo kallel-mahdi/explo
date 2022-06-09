@@ -1,54 +1,8 @@
-import logging
-import logging.config
-
-import torch
+import botorch
 import gpytorch
-### botorch
-from botorch.acquisition import ExpectedImprovement
-from botorch.fit import fit_gpytorch_model
-from botorch.optim import optimize_acqf
-from gpytorch.mlls import ExactMarginalLogLikelihood
-
-logging.config.fileConfig('logging.conf')
-logger = logging.getLogger("MathLog."+__name__)
+import torch
 
 
-class BOptimizer(object):
-      
-  def __init__(self,n_eval,**kwargs):
-        
-        self.n_eval = n_eval
-          
-  def step(self,model,objective_env):
-        
-      len_params = model.train_inputs[0].shape[-1]
-      
-      ### fit hypers of GP
-      mll = ExactMarginalLogLikelihood(model.likelihood, model)
-      fit_gpytorch_model(mll)
-
-      ### optimize acqf
-      best_value = model.train_targets.max()
-      EI = ExpectedImprovement(model=model, best_f=best_value)
-      eps = 1e-1
-      new_x, _ = optimize_acqf(
-        acq_function=EI,
-        bounds = torch.tensor([[-eps] * len_params, [eps] * len_params]),
-        q=1, ## always 1 for closed form acqf
-        raw_samples=20, ##number of initial random samples  
-        num_restarts=5, ## number of seeds initiated from random restarts
-      )
-      
-      ### evaluate new_x (here we evaluate only once)
-      new_y,new_s = objective_env(new_x,self.n_eval)
-      
-      assert not new_x.requires_grad    
-      ### Update training points.
-      model.append_train_data(new_x,new_y,new_s, strict=False)
-      
-      return new_x,new_y,new_s
-            
-    
 def my_fit_gpytorch_model(model):
     
     training_iter = 100 
@@ -75,8 +29,6 @@ def my_fit_gpytorch_model(model):
         loss.backward()
         optimizer.step()
     
-    # print("optimizer : lengthscales max/min",model.covar_module.lengthscales.max(),
-    #                             model.covar_module.lengthscales.min())
     print('Likelihood: %.3f noise: %.3f' % 
             (
             - loss.item(),
@@ -95,7 +47,7 @@ def my_optimize_acqf(acq_function,bounds,
     Yraw = acq_function(Xraw)  # evaluate the acquisition function on these q-batches
 
     # apply the heuristic for sampling promising initial conditions
-    X = initialize_q_batch_nonneg(Xraw, Yraw, N)
+    X = botorch.optim.initialize_q_batch_nonneg(Xraw, Yraw, N)
 
     # we'll want gradients for the input
     X.requires_grad_(True)

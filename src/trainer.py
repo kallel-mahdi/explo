@@ -1,9 +1,5 @@
 
 import pickle
-
-from src.optim import BOptimizer
-
-
 class Trainer:
     
     def __init__(self,model,objective_env,optimizer,

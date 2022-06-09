@@ -13,7 +13,7 @@ logger = logging.getLogger("ShapeLog."+__name__)
 
 class MLP(torch.nn.Module):
     
-    """MLP that is differentiable w.r.t to parameters
+    """Implements an MLP that is differentiable w.r.t to parameters (when they are fed by BO)
     """
 
     def __init__(

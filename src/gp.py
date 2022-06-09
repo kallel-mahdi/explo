@@ -43,7 +43,6 @@ class MyGP(SingleTaskGP):
         
         ######
 
-        print('train_y.shape',train_y.shape,train_y.squeeze().shape)
         super().__init__(train_X = train_x, 
                          train_Y= train_y.reshape(-1,1),
                         likelihood= likelihood,
@@ -126,6 +125,8 @@ class MyGP(SingleTaskGP):
         
             print("##############################")
             print(f'covar_lengthscale max {self.covar_module.lengthscales.max()} / min {self.covar_module.lengthscales.min()}')                  
+            print(f'variance  {self.covar_module.base_kernel.variance}')
+            print(f'noise {self.likelihood.noise_covar.noise.item()}')
             print("##############################")
             
         

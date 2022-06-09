@@ -137,6 +137,32 @@ class StateKernel(Kernel):
         logger.debug(f'reshape :actions.shape{actions.shape}')
         return actions
     
+# class LinearStateKernel(StateKernel):
+    
+#     def build_kernel(self,ard_num_dims,use_ard,**kwargs):
+        
+#         self.base_kernel = gpytorch.kernels.LinearKernel()
+#         self.register_parameter("lengthscales", torch.nn.Parameter(
+#                                                                 (1/ard_num_dims) *torch.ones(ard_num_dims)
+#                                                                 )
+#                                 )
+        
+        
+#     def forward(self,x1,x2,**params):
+        
+      
+        
+#         logger.debug(f'x1 {x1.shape} / x2 {x2.shape}')
+#         #Evaluate current parameters
+#         a1 = self.test_policy(x1,self.states)
+#         a2 = self.test_policy(x2,self.states)   
+#         logger.debug(f'a1 {a1.shape} a2 {a2.shape} ')
+#         # Compute pairwise pairwise kernel 
+#         kernel = self.base_kernel.forward(a1*self.lengthscales, a2*self.lengthscales, **params)
+#         logger.debug(f'pair kernel {kernel.shape}')
+        
+#         return kernel
+
 class LinearStateKernel(StateKernel):
     
     def build_kernel(self,ard_num_dims,use_ard,**kwargs):
@@ -158,10 +184,11 @@ class LinearStateKernel(StateKernel):
         a2 = self.test_policy(x2,self.states)   
         logger.debug(f'a1 {a1.shape} a2 {a2.shape} ')
         # Compute pairwise pairwise kernel 
-        kernel = self.base_kernel.forward(a1*self.lengthscales, a2*self.lengthscales, **params)
+        kernel = self.base_kernel.forward(a1, a2, **params)
         logger.debug(f'pair kernel {kernel.shape}')
         
         return kernel
+        
         
 
 def setup_kernel(kernel_config,mlp,train_s):

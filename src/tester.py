@@ -82,22 +82,37 @@ class Tester:
         ### get mean and confidence intervals from posterior
         x,y,_ = data
         y_hat,lower,upper = pred_data
-        err = lower-y_hat
         
         ### arrange points by l2 distance to optimum
         dist = torch.linalg.norm(x-best_x,dim=1)
         idx = torch.argsort(dist)
         y = y[idx]
         y_hat = y_hat[idx]
-
-        ### plot predictions with confidence
         x_plot = range(len(y))
-        plt.scatter(x_plot,y,label="true",color="red")
-        #plt.errorbar(x_plot,y_hat,yerr = err,label="prediction",fmt="o")
-        plt.errorbar(x_plot,y_hat,label="prediction",fmt="x")
-        plt.title(title+" MLL: "+str(mll)+'\n MAE'+str(mae(y,y_hat))+ '\n RMSE:'+str(mse(y,y_hat,squared=False)))
+        
+        fig,axs = plt.subplots(3,figsize=(5,15))
+        axs[0].scatter(x_plot,y,label="y",color="red")
+        axs[0].errorbar(x_plot,y_hat,label="y_hat",fmt="x")
+        axs[0].title.set_text(f' Predictions vs targets \n MAE: {mae(y,y_hat)} \n RMSE :{mse(y,y_hat,squared=False)}')
+        axs[0].set_xlabel("rank (in terms of distance to optimum)")
+        axs[0].set_ylabel("prediction")
+        
+        axs[0].legend()
+        
+        idx2 = torch.argsort(y)
+        axs[1].scatter(y[idx2],y_hat[idx2],label="error")
+        axs[1].plot(y[idx2],y[idx2],color="red")
+        axs[1].title.set_text("Error as a function of the target")
+        axs[1].set_xlabel("y")
+        axs[1].set_xlabel("y_hat")
+        
+        error = torch.abs(y[idx]-y_hat[idx])
+        axs[2].scatter(dist[idx],torch.cumsum(error,dim=0))
+        axs[2].set_title("Cummulative error as a function of L2 distance to optimum")
+        axs[2].set_xlabel("||x - x_opt||")
+        axs[2].set_xlabel("Cummulative error")
+        
         plt.legend()
-        plt.show()
         
     
     def get_mll(self,model,x,y):

@@ -16,7 +16,6 @@ logging.config.fileConfig('logging.conf')
 logger = logging.getLogger("MathLog."+__name__)
 
 
-
 def get_initial_data(mlp,objective_env,n_init):
     
     
