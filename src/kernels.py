@@ -6,7 +6,7 @@ from copy import deepcopy
 import gpytorch
 import torch
 ### gpytorch 
-from gpytorch.kernels import Kernel, MaternKernel, RBFKernel, ScaleKernel
+from gpytorch.kernels import Kernel, RBFKernel, ScaleKernel,LinearKernel
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from gpytorch.priors.torch_priors import GammaPrior
 
@@ -20,9 +20,7 @@ debug._set_state(False) ##hotfix for GridKernel to inherit ScaleKernel
 class MyRBFKernel(ScaleKernel):
         
     
-    def __init__(self,ard_num_dims,use_ard=True,
-                noise_constraint=None,
-                noise_hyperprior=None,
+    def __init__(self,ard_num_dims,use_ard,
                 lengthscale_constraint=None,
                 lengthscale_hyperprior=None,
                 outputscale_constraint=None,
@@ -35,10 +33,10 @@ class MyRBFKernel(ScaleKernel):
             ard_num_dims=ard_num_dims,
             lengthscale_prior=lengthscale_hyperprior,
             lengthscale_constraint=lengthscale_constraint,
-                                )
+                        )
         
         
-        super().__init__(base_kernel=rbf,
+        ScaleKernel.__init__(self,base_kernel=rbf,
             outputscale_prior=outputscale_hyperprior,
             outputscale_constraint=outputscale_constraint,
                                                             ) 
@@ -49,10 +47,7 @@ class MyRBFKernel(ScaleKernel):
         if outputscale_hyperprior is not None:
             self.outputscale = outputscale_hyperprior.mean  
         
-    """Toy kernel for warningging"""
     def forward(self,x1,x2,**params):
-        
-
         
         logger.debug(f'x1 {x1.shape} / x2 {x2.shape}')
         rslt = super().forward(x1,x2,**params)
@@ -61,47 +56,47 @@ class MyRBFKernel(ScaleKernel):
 
 
 
-class StateKernel(Kernel):
+class StateKernel:
     
     """Abstract class for a kernel that uses state action pairs metric
     """
     
     def __init__(self,mlp,train_s,
-                ard_num_dims,use_ard,
-                noise_constraint=None,
-                noise_hyperprior=None,
-                lengthscale_constraint=None,
-                lengthscale_hyperprior=None,
-                outputscale_constraint=None,
-                outputscale_hyperprior=None):
+                **kernel_config
+                ):
                 
         """
         
-        ard_num_dims : in this kernel it's the number of states to take.
         use_ard : whether to give more weight to certain states.
+        ard_num_dims : in this kernel it's the number of states to take.
         
         """
-        super().__init__()
-        self.train_s = None
-        self.mlp = None
-        self.orig_args = locals().copy()        
+      
+        
+        self.states = train_s
         self.n_actions = mlp.n_actions
+        self.kernel_config = kernel_config
         self.set_train_data(train_s,mlp)
-
-    def get_kernel_args(self,train_s):
+        self.mlp = mlp ## this must be set after updating kernel
         
-        args = self.orig_args.copy()
-        
-        ### rewrite ard_num_dims
-        args["ard_num_dims"] = train_s.shape[0] * args["mlp"].n_actions
-        del args["train_s"]
-        del args["self"]
-        del args["mlp"]
-        
-        
-        return args
-        
+        print(f'Statekernel i have mlp {self.mlp}')
     
+    def set_train_data(self,train_s,mlp):
+        """ sometimes we need to reset the states used by the kernel
+        This usually requires re insantiating the base kernel (RBF or Linear ..) """
+            
+        self.kernel_config["ard_num_dims"] = train_s.shape[0] * mlp.n_actions
+        self.build_kernel(**self.kernel_config)
+        self.states = train_s
+        ## removing this works for linearstate but not rbf kernel
+        ## might be worth investigation
+        self.mlp = mlp 
+
+
+    def append_train_data(self,new_s,mlp):
+        
+        self.set_train_data(new_s,mlp)
+
     def build_kernel(self):
         
         raise NotImplementedError
@@ -111,24 +106,9 @@ class StateKernel(Kernel):
         raise NotImplementedError
     
     
-    def set_train_data(self,train_s,mlp):
-        
-        
-        kernel_args = self.get_kernel_args(train_s)
-        self.build_kernel(**kernel_args)
-        self.__dict__.update(**kernel_args)
-        
-        self.states = train_s
-        self.mlp = mlp
         
     
-    
-    def append_train_data(self,new_s,mlp):
-        
-        self.set_train_data(new_s,mlp)
-        
-    
-    def test_policy(self,params_batch,states):
+    def run_parameters(self,params_batch,states):
         
         logger.debug(f'mlp :params_batch.shape{params_batch.shape} states.shape {states.shape}')
         actions = self.mlp(params_batch,states) ##[params_batch[:2],n_actions,n_states]
@@ -137,83 +117,69 @@ class StateKernel(Kernel):
         logger.debug(f'reshape :actions.shape{actions.shape}')
         return actions
     
-# class LinearStateKernel(StateKernel):
-    
-#     def build_kernel(self,ard_num_dims,use_ard,**kwargs):
-        
-#         self.base_kernel = gpytorch.kernels.LinearKernel()
-#         self.register_parameter("lengthscales", torch.nn.Parameter(
-#                                                                 (1/ard_num_dims) *torch.ones(ard_num_dims)
-#                                                                 )
-#                                 )
-        
-        
-#     def forward(self,x1,x2,**params):
-        
-      
-        
-#         logger.debug(f'x1 {x1.shape} / x2 {x2.shape}')
-#         #Evaluate current parameters
-#         a1 = self.test_policy(x1,self.states)
-#         a2 = self.test_policy(x2,self.states)   
-#         logger.debug(f'a1 {a1.shape} a2 {a2.shape} ')
-#         # Compute pairwise pairwise kernel 
-#         kernel = self.base_kernel.forward(a1*self.lengthscales, a2*self.lengthscales, **params)
-#         logger.debug(f'pair kernel {kernel.shape}')
-        
-#         return kernel
 
-class LinearStateKernel(StateKernel):
+
+class LinearStateKernel(LinearKernel,StateKernel):
+    
+    
+    def __init__(self,**kwargs):
+        
+        StateKernel.__init__(self,**kwargs)
     
     def build_kernel(self,ard_num_dims,use_ard,**kwargs):
         
-        self.base_kernel = gpytorch.kernels.LinearKernel()
-        self.register_parameter("lengthscales", torch.nn.Parameter(
-                                                                (1/ard_num_dims) *torch.ones(ard_num_dims)
-                                                                )
-                                )
+        LinearKernel.__init__(self)
         
-        
-    def forward(self,x1,x2,**params):
-        
-      
-        
-        logger.debug(f'x1 {x1.shape} / x2 {x2.shape}')
-        #Evaluate current parameters
-        a1 = self.test_policy(x1,self.states)
-        a2 = self.test_policy(x2,self.states)   
-        logger.debug(f'a1 {a1.shape} a2 {a2.shape} ')
-        # Compute pairwise pairwise kernel 
-        kernel = self.base_kernel.forward(a1, a2, **params)
-        logger.debug(f'pair kernel {kernel.shape}')
-        
-        return kernel
-        
-        
-
-def setup_kernel(kernel_config,mlp,train_s):
-    
-    kernel_name = kernel_config.pop("kernel_name")
-    kernel_config["ard_num_dims"]=mlp.len_params
-    
-    print(f'Using ard_num_dims = {mlp.len_params}')
-    
-    if kernel_name == "rbf":
-        
-        kernel = MyRBFKernel(**kernel_config)
-    
-    elif kernel_name == "grid":
-        
-        kernel = GridKernel(**kernel_config,mlp=mlp,train_s=train_s)
-    
-    elif kernel_name == "linearstate":
+        if use_ard: 
             
-        kernel = LinearStateKernel(**kernel_config,mlp=mlp,train_s=train_s)
+            self.register_parameter("lengthscales", torch.nn.Parameter(
+                                                                    (1/ard_num_dims) * torch.ones(ard_num_dims)
+                                                                    )
+                                    )
+        
+        else : 
+            
+            self.lengthscales = (1/ard_num_dims) * torch.ones(ard_num_dims)
+            self.lengthscales.requires_grad = False
+              
+        def forward(self,x1,x2,**params):
+            
+            
+            logger.debug(f'x1 {x1.shape} / x2 {x2.shape}')
+            #Evaluate current parameters
+            a1 = self.run_parameters(x1,self.states)
+            a2 = self.run_parameters(x2,self.states)   
+            logger.debug(f'a1 {a1.shape} a2 {a2.shape} ')
+            # Compute pairwise pairwise kernel 
+            kernel = super().forward(self.lengthscales* a1, self.lengthscales * a2, **params)
+            logger.debug(f'pair kernel {kernel.shape}')
+            
+            return kernel
+            
+            
+class RBFStateKernel(MyRBFKernel,StateKernel):
     
-    else : raise ValueError("Unknown kernel")
+        def __init__(self,**kwargs):
+            
+            StateKernel.__init__(self,**kwargs)
     
-    return kernel
-
+        def build_kernel(self,ard_num_dims,use_ard,**kwargs):
+                        
+            MyRBFKernel.__init__(self,ard_num_dims,use_ard,**kwargs)
+        
+        def forward(self,x1,x2,**params):
+                
+            logger.debug(f'x1 {x1.shape} / x2 {x2.shape}')
+            #Evaluate current parameters
+            a1 = self.run_parameters(x1,self.states)
+            a2 = self.run_parameters(x2,self.states)   
+            logger.debug(f'a1 {a1.shape} a2 {a2.shape} ')
+            # Compute pairwise pairwise kernel 
+            kernel = super().forward(a1, a2, **params)
+            logger.debug(f'pair kernel {kernel.shape}')
+            
+            return kernel
+            
         
 class GridKernel(object):
     pass

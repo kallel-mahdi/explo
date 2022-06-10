@@ -77,20 +77,24 @@ class Tester:
     
   
   
-    def plot(self,data,pred_data,mll,best_x,title):
-        
-        ### get mean and confidence intervals from posterior
-        x,y,_ = data
-        y_hat,lower,upper = pred_data
+    def plot(self,x,y,y_hat,best_x,title,
+             subfigure=None):
+    
         
         ### arrange points by l2 distance to optimum
         dist = torch.linalg.norm(x-best_x,dim=1)
         idx = torch.argsort(dist)
+ 
         y = y[idx]
         y_hat = y_hat[idx]
         x_plot = range(len(y))
         
-        fig,axs = plt.subplots(3,figsize=(5,15))
+        if subfigure is None:
+            fig,axs = plt.subplots(3,figsize=(5,12))
+
+        else :
+            axs = subfigure.subplots(3)
+            
         axs[0].scatter(x_plot,y,label="y",color="red")
         axs[0].errorbar(x_plot,y_hat,label="y_hat",fmt="x")
         axs[0].title.set_text(f' Predictions vs targets \n MAE: {mae(y,y_hat)} \n RMSE :{mse(y,y_hat,squared=False)}')
@@ -113,6 +117,7 @@ class Tester:
         axs[2].set_xlabel("Cummulative error")
         
         plt.legend()
+        
         
     
     def get_mll(self,model,x,y):
@@ -157,6 +162,8 @@ class Tester:
 
     def run(self,train_data,test_data,opt_states):
         
+        self.__dict__.update(locals()) ##save args to self
+        
          
         # fit model locally
         train_x,train_y,train_s = train_data
@@ -172,8 +179,21 @@ class Tester:
         train_mll = self.get_mll(model,train_x,train_y)
         test_mll = self.get_mll(model,test_x,test_y)
         
-        self.plot(train_data,train_pred,train_mll,self.local_opt,title="train")
-        self.plot(test_data,test_pred,test_mll,self.local_opt,title="test")
+        
+        #fig = plt.figure(constrained_layout=True,figsize=(8,12))
+        fig = plt.figure(constrained_layout=True,figsize=(10,12))
+        subfigures = fig.subfigures(1,2)
+        ### train plots
+        x,y,_ = train_data
+        y_hat,lower,upper = train_pred
+        self.plot(x,y,y_hat,self.local_opt,"train",
+                  subfigures[0])
+        
+        ### test plots
+        x,y,_ = test_data
+        y_hat,lower,upper = test_pred
+        self.plot(x,y,y_hat,self.local_opt,"test",
+                  subfigures[1])
         
         opt_data = (self.local_opt,opt_states)
 

@@ -3,16 +3,18 @@ import gpytorch
 import torch
 
 
-def my_fit_gpytorch_model(model):
+def my_fit_gpytorch_model(model,training_iter=100):
     
-    training_iter = 100 
+    """ Fit the hyperparameters of a gpytorch model 
+    using SGD and fixed number of steps, contrary to the original LBFGS implementation."""
+    
     train_x = model.train_inputs[0]
     train_y = model.train_targets
     # Find optimal model hyperparameters
     model.train()
     model.likelihood.train()
 
-    # Use the adam optimizer
+    # Use the adam optimizer (Maybe define it outside?)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)  # Includes GaussianLikelihood parameters
 

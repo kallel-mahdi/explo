@@ -118,7 +118,6 @@ class GIBOptimizer(object):
         len_params = theta_i.shape[-1]
         optimizer_torch = torch.optim.SGD([theta_i], lr=0.5)
         
-        
         self.__dict__.update(locals())
         
         print(f' Gibo will use {self.n_max} last points to fit GP and {self.n_info_samples} info samples')
@@ -192,6 +191,11 @@ class GIBOptimizer(object):
         # Sample locally to optimize gradient information
         bounds = torch.tensor([[-self.delta], [self.delta]]) + theta_i
         self.optimize_information(objective_env,model,bounds)
+        
+        ##############################################
+        ### NEW Second step of fitting hyperparameters
+        mll = ExactMarginalLogLikelihood(model.likelihood, model)
+        fit_gpytorch_model(mll)
         
         # Take one step in direction of the gradient
         self.one_gradient_step(model, theta_i)

@@ -13,7 +13,6 @@ def get_env_configs(env_name):
                 }
 
                 env_appx_config = {
-                        "ard_num_dims":None, ## set in setup_kernel
                         "n_max":20,## for giboptimizer
                         "n_info": 8
                 }
@@ -29,7 +28,6 @@ def get_env_configs(env_name):
                 }
 
                 env_appx_config = {
-                        "ard_num_dims":None, ## set in setup_kernel
                         "n_max":32,
                         "n_info": 16,
                 }
@@ -45,7 +43,6 @@ def get_env_configs(env_name):
 
                 env_appx_config = {
                         
-                        "ard_num_dims":None, ## set in setup_kernel
                         "n_max":48,      
                         "n_info": 8,
                         
@@ -79,10 +76,8 @@ def get_configs(env_name,kernel_name):
 
 
         kernel_config = {
-                "use_ard":True,
+                "use_ard":False,
                 "kernel_name":kernel_name,
-                ## in case of gridkernel ard_num_dims is number of state samples
-                "ard_num_dims": 1000 if kernel_name =="grid" else env_appx_config["ard_num_dims"],
                 "lengthscale_hyperprior":gpytorch.priors.torch_priors.GammaPrior(3.0,6.0),
                 "lengthscale_constraint":gpytorch.constraints.constraints.GreaterThan(0.001),
                 "outputscale_constraint":gpytorch.constraints.constraints.GreaterThan(0.01),
@@ -99,9 +94,10 @@ def get_configs(env_name,kernel_name):
         optimizer_config = {
                 "n_eval":1,
                 ### for GIBO
-                "n_max":env_appx_config["n_max"],
+                "n_max":env_appx_config["n_max"], 
                 "n_info_samples":env_appx_config["n_info"],
-                "delta":0.1,
+                "delta":0.1, ## 0.01 better for linear
+                ### hessian normalisation applies only for rbf
                 "normalize_gradient":True if kernel_name == "rbf" else False,
                 "standard_deviation_scaling":False,
         }

@@ -45,9 +45,36 @@ def setup_policy(env,additional_layers):
     mlp = MLP([n_inputs]+additional_layers+[n_actions],add_bias=True)
     
     return mlp
+
+def setup_kernel(kernel_config,mlp,train_s):
+    
+    kernel_name = kernel_config.pop("kernel_name")
+    
+    ### If not using a statekernel: ard_num_dims = num_parameters
+    ### Otherwise statekernel handles ard_num_dims dynamically
+    kernel_config["ard_num_dims"]=mlp.len_params
+    print(f'Using ard_num_dims = {mlp.len_params}')
+    
+    if kernel_name == "rbf":
+        
+        kernel = MyRBFKernel(**kernel_config)
+    
+    elif kernel_name == "linearstate":
+            
+        kernel = LinearStateKernel(**kernel_config,mlp=mlp,train_s=train_s)
+    
+    elif kernel_name == "rbfstate":
+        
+        kernel = RBFStateKernel(**kernel_config,mlp=mlp,train_s=train_s)
+    
+    else : raise ValueError("Unknown kernel")
+    
+    return kernel
+
     
 def setup_experiment(env_config,
                      kernel_config,likelihood_config,additional_layers=[]):
+    
     
     ### build environment and linear policy
     n_init = env_config.pop("n_init")
@@ -61,12 +88,16 @@ def setup_experiment(env_config,
             **env_config
             )
     
-    
     train_x,train_y,train_s = get_initial_data(mlp,objective_env,n_init)
+    
+    kernel = setup_kernel(kernel_config,mlp=mlp,train_s=train_s)
+    likelihood = gpytorch.likelihoods.GaussianLikelihood(
+            **likelihood_config
+        )
     
     # initialize likelihood and model
     model = DEGP(train_x=train_x,train_y=train_y,train_s=train_s,
-                 kernel_config=kernel_config,likelihood_config=likelihood_config,
+                 kernel = kernel,likelihood=likelihood,
                  mlp =mlp)
     
     return model,objective_env

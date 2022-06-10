@@ -135,7 +135,7 @@ class EnvironmentObjective:
             #### no need for grads here
             with torch.no_grad():
                 actions[t] = self.mlp(params,states[t].unsqueeze(0)).squeeze()
-                #actions[t] = self.mlp(params,states[t])
+                
             ###########################
             
             state, rewards[t], done, _ = self.env.step(actions[t].detach().numpy())
@@ -152,6 +152,7 @@ class EnvironmentObjective:
     def run_many(self, params,n_episodes):
        
         rewards = torch.tensor([0], dtype=torch.float32)
+        all_states = []
        
         for _ in range(n_episodes):
            

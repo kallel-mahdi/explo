@@ -3,39 +3,31 @@ import logging.config
 
 import gpytorch
 import torch
-from botorch.models.gpytorch import GPyTorchModel
 from botorch.models.gp_regression import SingleTaskGP
-from botorch.models.transforms.outcome import Standardize
 from botorch.models.transforms.input import InputStandardize
+from botorch.models.transforms.outcome import Standardize
 from gpytorch import ExactMarginalLogLikelihood
 from gpytorch.distributions import MultivariateNormal
 from gpytorch.means import ConstantMean
-from gpytorch.models import ExactGP
 
 from src.kernels import *
 
+
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger("ShapeLog."+__name__)
-
-#class MyGP(ExactGP,GPyTorchModel):
 
 class MyGP(SingleTaskGP):
     
     _num_outputs = 1
     
     def __init__(self, train_x, train_y,train_s,
-                kernel_config,likelihood_config,
+                kernel,likelihood,
                 mlp=None,
                 ):
         
         self.x_hist = train_x.clone()
         self.y_hist = train_y.clone()
         
-        #### maybe add this to kernel
-
-        likelihood = gpytorch.likelihoods.GaussianLikelihood(
-            **likelihood_config
-        )
         
         ## Use fixed (unoptimizable) noise
         # likelihood.noise_covar.noise = 0.01
@@ -47,14 +39,11 @@ class MyGP(SingleTaskGP):
                          train_Y= train_y.reshape(-1,1),
                         likelihood= likelihood,
                         mean_module =ConstantMean(), ## prior mean = 0
-                        covar_module = setup_kernel(kernel_config,mlp=mlp,train_s=train_s),
+                        covar_module = kernel,
                         #### NEWW NORMALIZATION
                         # outcome_transform=Standardize(m=train_y.shape[-1]),
                         # input_transform=InputStandardize(d=train_x.shape[-1])
                         )
-    
-        # self.mean_module = ConstantMean() ## prior mean = 0
-        # self.covar_module = setup_kernel(kernel_config,mlp=mlp,train_s=train_s)
 
         self.N = train_x.shape[0]
         self.D = train_x.shape[1] 
@@ -124,8 +113,8 @@ class MyGP(SingleTaskGP):
         elif isinstance(self.covar_module,LinearStateKernel):
         
             print("##############################")
-            print(f'covar_lengthscale max {self.covar_module.lengthscales.max()} / min {self.covar_module.lengthscales.min()}')                  
-            print(f'variance  {self.covar_module.base_kernel.variance}')
+            print(f'linear model covar_lengthscale max {self.covar_module.lengthscales.max()} / min {self.covar_module.lengthscales.min()}')                  
+            print(f'variance  {self.covar_module.variance}')
             print(f'noise {self.likelihood.noise_covar.noise.item()}')
             print("##############################")
             
