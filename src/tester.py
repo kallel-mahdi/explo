@@ -48,7 +48,7 @@ class Tester:
             
         tmp = [self.objective_env(p,n_episodes) for p in x]
         y = torch.Tensor([d[0] for d in tmp]).reshape(-1)  ## [n_trials,1]
-        s = torch.stack( [d[1] for d in tmp])  ## [n_trials,max_len,state_dim]
+        s = torch.cat( [d[1] for d in tmp])  ## [n_trials,max_len,state_dim]
         s = torch.flatten(s,start_dim=0,end_dim=1) ## [n_trials*max_len,state_dim]
         
         return (x,y,s)

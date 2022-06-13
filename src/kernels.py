@@ -8,7 +8,7 @@ import torch
 ### gpytorch 
 from gpytorch.kernels import Kernel, RBFKernel, ScaleKernel,LinearKernel
 from gpytorch.mlls import ExactMarginalLogLikelihood
-from gpytorch.priors.torch_priors import GammaPrior
+
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger("ShapeLog."+__name__)
@@ -128,7 +128,8 @@ class LinearStateKernel(LinearKernel,StateKernel):
     
     def build_kernel(self,ard_num_dims,use_ard,**kwargs):
         
-        LinearKernel.__init__(self)
+        LinearKernel.__init__(self,
+                              variance_constriant = gpytorch.constraints.constraints.GreaterThan(0.1))
         
         if use_ard: 
             
@@ -151,7 +152,7 @@ class LinearStateKernel(LinearKernel,StateKernel):
             a2 = self.run_parameters(x2,self.states)   
             logger.debug(f'a1 {a1.shape} a2 {a2.shape} ')
             # Compute pairwise pairwise kernel 
-            kernel = super().forward(self.lengthscales* a1, self.lengthscales * a2, **params)
+            kernel = super().forward(self.lengthscales* a1,a2, **params)
             logger.debug(f'pair kernel {kernel.shape}')
             
             return kernel
@@ -166,6 +167,7 @@ class RBFStateKernel(MyRBFKernel,StateKernel):
         def build_kernel(self,ard_num_dims,use_ard,**kwargs):
                         
             MyRBFKernel.__init__(self,ard_num_dims,use_ard,**kwargs)
+            self.base_kernel.lengthscale = 1/ard_num_dims
         
         def forward(self,x1,x2,**params):
                 

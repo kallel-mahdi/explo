@@ -1,11 +1,10 @@
-from typing import Tuple, Dict, Callable, Iterator, Union, Optional, List
-
-#from abc import ABC, abstractmethod
-
 from time import time
+from typing import Callable, Dict, Iterator, List, Optional, Tuple, Union
+
 import glfw
-import torch
 import gym
+import numpy as np
+import torch
 from gym import wrappers
 
 
@@ -63,9 +62,6 @@ class EnvironmentObjective:
             "rewards": torch.empty(self.max_steps, dtype=torch.float32),
         }
 
-        # if manipulate_reward is None:
-        #     manipulate_reward = lambda reward, action, state, done: reward
-        # self.manipulate_reward = manipulate_reward
         
         self.manipulate_reward = manipulate_reward(reward_shift,reward_scale)
 
@@ -80,35 +76,7 @@ class EnvironmentObjective:
     def __call__(self, params,n_episodes=1) :
         return self.run_many(params,n_episodes)
 
-    def _unpack_episode(self):
-        
-        """Helper function for get_last_episode.
 
-        Get states, actions and rewards of last episode.
-
-        Returns:
-            Tuple of states, actions and rewards.
-        """
-        states = self._last_episode["states"]
-        actions = self._last_episode["actions"]
-        rewards = self._last_episode["rewards"]
-        return states, actions, rewards
-    
-
-    def get_last_episode(self):
-        """Return states, actions and rewards of last episode.
-        Implemented for the implementation of mlp gradient methods.
-
-        Returns:
-            Dictionary of states, actions and rewards.
-        """
-        
-        states, actions, rewards = self._unpack_episode()
-        return {
-            "states": states[: self._last_episode_length + 1].clone(),
-            "actions": actions[: self._last_episode_length].clone(),
-            "rewards": rewards[: self._last_episode_length].clone(),
-        }
 
     def run(
         self, params: torch.Tensor
@@ -126,28 +94,39 @@ class EnvironmentObjective:
         Returns:
             Cumulated reward.
         """
-        states, actions, rewards = self._unpack_episode()
+        states, actions, rewards = [],[],[]
         r = 0
-        states[0] = self.manipulate_state(self.env.reset())
+        states.append(self.manipulate_state(self.env.reset()))
         
         for t in range(self.max_steps):  # rollout
             
             #### no need for grads here
             with torch.no_grad():
-                actions[t] = self.mlp(params,states[t].unsqueeze(0)).squeeze()
+                
+                action = self.mlp(params,states[t].unsqueeze(0)).squeeze()
                 
             ###########################
             
-            state, rewards[t], done, _ = self.env.step(actions[t].detach().numpy())
-            states[t + 1] = self.manipulate_state(state)
-            r += self.manipulate_reward(
-                rewards[t], actions[t], states[t + 1], done
-            )  # Define as stochastic gradient ascent.
+            state, reward_tmp, done, _ = self.env.step(action.detach().numpy())
+            
+            rewards.append(self.manipulate_reward(reward_tmp))
+            states.append(self.manipulate_state(state))
+            actions.append(action)
+            
             
             if done:
+                
                 break
          
-        return torch.tensor([r], dtype=torch.float32),states
+         
+        rewards = torch.tensor(rewards)
+        actions = torch.stack(actions)
+        states = torch.stack(states)
+
+
+        #print(f'one episode : actions {actions.shape} / states {states.shape}')
+        
+        return torch.sum(rewards),states
     
     def run_many(self, params,n_episodes):
        
@@ -159,12 +138,16 @@ class EnvironmentObjective:
            reward,states = self.run(params)
            
            rewards += reward
+           all_states.append(states)
            
+        all_states = torch.cat(all_states)     
+        avg_reward = rewards/n_episodes
         
-        return rewards/n_episodes, states
+        #print(f' avg_reward{avg_reward}, all_states{all_states.shape}')
+        
+        return avg_reward,all_states
     
            
-
     def test_params(
         self,
         params: torch.Tensor,
@@ -188,11 +171,12 @@ class EnvironmentObjective:
         """
         if path_to_video is not None:
             self.env = wrappers.Monitor(self.env, path_to_video, force=True)
+            import numpy as np
         num_digits = len(str(episodes))
         for episode in range(episodes):
             reward = self.run(params, render=render, test=True)
-            if verbose:
-                print(f"episode: {episode+1:{num_digits}}, reward: {reward}")
+            #if verbose:
+                #print(f"episode: {episode+1:{num_digits}}, reward: {reward}")
         if render:
             try:
                 glfw.destroy_window(self.env.viewer.window)
@@ -241,4 +225,4 @@ def manipulate_reward(shift: Union[int, float], scale: Union[int, float]):
         shift = 0
     if scale is None:
         scale = 1
-    return lambda reward, action, state, done: (reward - shift) / scale
+    return lambda reward: (reward - shift) / scale

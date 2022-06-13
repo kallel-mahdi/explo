@@ -46,7 +46,7 @@ class GradientInformation(botorch.acquisition.AnalyticAcquisitionFunction):
         x = self.theta_i.view(-1, self.model.D)
         self.K_xX_dx_part = self._get_KxX_dx(x, X)
 
-    def K_θX(self,theta_t,X_hat):
+    def K_xX(self,theta_t,X_hat):
         
         rslt = self.model.covar_module(theta_t,X_hat).evaluate()
         
@@ -62,10 +62,10 @@ class GradientInformation(botorch.acquisition.AnalyticAcquisitionFunction):
             (n x D) The derivative of K(x,X) w.r.t. x.
         '''
         
-        jacobs = torch.autograd.functional.jacobian(func=lambda theta : self.K_θX(theta,X_hat),inputs=(theta_t))
-        K_θX_dθ = jacobs.sum(dim=2).transpose(1,2)
+        jacobs = torch.autograd.functional.jacobian(func=lambda theta : self.K_xX(theta,X_hat),inputs=(theta_t))
+        K_xX_dx = jacobs.sum(dim=2).transpose(1,2)
 
-        return K_θX_dθ
+        return K_xX_dx
 
     # TODO: nicer batch-update for batch of thetas.
     @botorch.utils.transforms.t_batch_mode_transform(expected_q=1)
@@ -81,7 +81,7 @@ class GradientInformation(botorch.acquisition.AnalyticAcquisitionFunction):
         '''
         sigma_n = self.model.likelihood.noise_covar.noise
         D = self.model.D
-        X = self.model.train_inputs[0]
+        X = self.model.train_inputs[0] ## does this include theta_i???
         x = self.theta_i.view(-1, D)
 
         variances = []
@@ -167,35 +167,55 @@ class GIBOptimizer(object):
 
     def step(self,model,objective_env):
    
+        
+        # Theta_i is directly updated by gradient
         theta_i = self.theta_i
- 
+    
         # Evaluate current parameters
         new_y,new_s = objective_env(theta_i,self.n_eval)
         model.append_train_data(theta_i,new_y,new_s, strict=False)
-        self.gradInfo.update_theta_i(theta_i)
         
-        # Only optimize model hyperparameters if N >= n_max.
+        
+        # NEWWW : Adjust hyperparameters before info collection
+        # for better information estimate
+        
+        
         if (model.N >= self.n_max): 
-            
-            # Adjust hyperparameters
-            mll = ExactMarginalLogLikelihood(model.likelihood, model)
-            fit_gpytorch_model(mll)
             
             # Restrict data to only recent points
             last_x = model.train_inputs[0][-self.n_max:]
             last_y = model.train_targets[-self.n_max:]
             model.set_train_data(last_x,last_y,strict=False)
             model.posterior(self.theta_i)  ## hotfix
-            self.gradInfo.update_K_xX_dx() ## hotfix
+            
+            # Adjust hyperparameters
+            mll = ExactMarginalLogLikelihood(model.likelihood, model)
+            fit_gpytorch_model(mll)
+            
+    
         
         # Sample locally to optimize gradient information
+        self.gradInfo.update_theta_i(theta_i) ## this also update KxX_dx
         bounds = torch.tensor([[-self.delta], [self.delta]]) + theta_i
         self.optimize_information(objective_env,model,bounds)
         
-        ##############################################
-        ### NEW Second step of fitting hyperparameters
-        mll = ExactMarginalLogLikelihood(model.likelihood, model)
-        fit_gpytorch_model(mll)
+        # Adjust hyperparameters after information collection 
+        # for better gradient estimate
+        
+        
+        if (model.N >= self.n_max): 
+            
+            # Restrict data to only recent points
+            last_x = model.train_inputs[0][-self.n_max:]
+            last_y = model.train_targets[-self.n_max:]
+            model.set_train_data(last_x,last_y,strict=False)
+            model.posterior(self.theta_i)  ## hotfix
+            
+            # Adjust hyperparameters
+            mll = ExactMarginalLogLikelihood(model.likelihood, model)
+            fit_gpytorch_model(mll)
+            
+        
         
         # Take one step in direction of the gradient
         self.one_gradient_step(model, theta_i)

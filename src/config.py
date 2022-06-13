@@ -13,22 +13,23 @@ def get_env_configs(env_name):
                 }
 
                 env_appx_config = {
-                        "n_max":20,## for giboptimizer
-                        "n_info": 8
+                        
+                        "n_max":20, ## number of samples used to fit gp
+                        "n_info": 8 ## number of samples collected to computed local gradient
                 }
                 
-        elif env_name == "Swimmer-v2":
+        elif env_name == "Swimmer-v4":
 
                 env_config = {
                         "n_init" : 2,
                         "reward_scale":350,
                         "reward_shift":0,
-                        "env_name":"Swimmer-v2",
+                        "env_name":"Swimmer-v4",
                         
                 }
 
                 env_appx_config = {
-                        "n_max":32,
+                        "n_max":100,
                         "n_info": 16,
                 }
 
