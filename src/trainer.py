@@ -1,5 +1,8 @@
 
 import pickle
+import matplotlib.pyplot as plt
+import  torch
+import  numpy as np
 class Trainer:
     
     def __init__(self,model,objective_env,optimizer,
@@ -20,7 +23,23 @@ class Trainer:
             pickle.dump((self.best_x,self.best_y),handle)
             
         print(f'Saved best weights to {ckpt_path}')
+        
+    
+    def plot_cummulative_regret(self):
+        
+        model = self.model    
+        targets = model.y_hist.squeeze().numpy()
+        n_trials = targets.shape[0]
+        best_performance=np.zeros(n_trials)
 
+
+
+        for i in range(1,n_trials):
+
+            best_performance[i] = targets[:i].max()
+
+        plt.plot(best_performance)
+                
 
     def run(self):
         
@@ -47,7 +66,10 @@ class Trainer:
     
         self.best_x,self.best_y = model.get_best_params()
         
+        self.plot_cummulative_regret()
+        
         if self.save_best : self.save_bests()
+        
 
         return self.best_x,self.best_y
                 

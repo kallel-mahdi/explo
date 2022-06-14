@@ -66,6 +66,10 @@ def setup_kernel(kernel_config,mlp,train_s):
     elif kernel_name == "rbfstate":
         
         kernel = RBFStateKernel(**kernel_config,mlp=mlp,train_s=train_s)
+        
+    elif kernel_name == "maternstate":
+            
+        kernel = MaternStateKernel(**kernel_config,mlp=mlp,train_s=train_s)
     
     else : raise ValueError("Unknown kernel")
     

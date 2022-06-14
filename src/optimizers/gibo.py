@@ -176,7 +176,7 @@ class GIBOptimizer(object):
         model.append_train_data(theta_i,new_y,new_s, strict=False)
         
         
-        # NEWWW : Adjust hyperparameters before info collection
+        # Adjust hyperparameters before info collection
         # for better information estimate
         
         
@@ -199,21 +199,21 @@ class GIBOptimizer(object):
         bounds = torch.tensor([[-self.delta], [self.delta]]) + theta_i
         self.optimize_information(objective_env,model,bounds)
         
-        # Adjust hyperparameters after information collection 
-        # for better gradient estimate
+        # # NEEEW : Adjust hyperparameters after information collection 
+        # # for better gradient estimate
         
         
-        if (model.N >= self.n_max): 
+        # if (model.N >= self.n_max): 
             
-            # Restrict data to only recent points
-            last_x = model.train_inputs[0][-self.n_max:]
-            last_y = model.train_targets[-self.n_max:]
-            model.set_train_data(last_x,last_y,strict=False)
-            model.posterior(self.theta_i)  ## hotfix
+        #     # Restrict data to only recent points
+        #     last_x = model.train_inputs[0][-self.n_max:]
+        #     last_y = model.train_targets[-self.n_max:]
+        #     model.set_train_data(last_x,last_y,strict=False)
+        #     model.posterior(self.theta_i)  ## hotfix
             
-            # Adjust hyperparameters
-            mll = ExactMarginalLogLikelihood(model.likelihood, model)
-            fit_gpytorch_model(mll)
+        #     # Adjust hyperparameters
+        #     mll = ExactMarginalLogLikelihood(model.likelihood, model)
+        #     fit_gpytorch_model(mll)
             
         
         
