@@ -14,7 +14,7 @@ def get_env_configs(env_name):
 
                 env_appx_config = {
                         
-                        "n_max":20, ## number of samples used to fit gp
+                        "n_max":50, ## number of samples used to fit gp
                         "n_info": 8 ## number of samples collected to computed local gradient
                 }
                 
@@ -37,7 +37,7 @@ def get_env_configs(env_name):
 
                 env_config = {
                         "n_init" : 2,
-                        "reward_scale":1000,
+                        "reward_scale":1000, 
                         "reward_shift":1,
                         "env_name":"Hopper-v2",
                 }

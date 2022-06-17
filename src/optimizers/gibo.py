@@ -116,13 +116,18 @@ class GIBOptimizer(object):
         theta_i = model.train_inputs[0][-1].reshape(1,-1)
         params_history = [theta_i.clone()]
         len_params = theta_i.shape[-1]
-        optimizer_torch = torch.optim.SGD([theta_i], lr=0.5)
+        #optimizer_torch = torch.optim.SGD([theta_i], lr=0.5,momentum=0.5)
+        optimizer_torch = torch.optim.SGD([theta_i], lr=0.1)
+        #optimizer_torch = torch.optim.Adam([theta_i], lr=1e-3)
         
         self.__dict__.update(locals())
         
         print(f' Gibo will use {self.n_max} last points to fit GP and {self.n_info_samples} info samples')
         
     def optimize_information(self,objective_env,model,bounds):
+        
+        
+        acq_value_old = 100
     
         ## Optimize gradient information locally
         for _ in range(self.n_info_samples):
@@ -130,7 +135,7 @@ class GIBOptimizer(object):
             model.posterior(self.theta_i)  ## hotfix
 
             # Optimize acquistion function and get new observation.
-            new_x, _ = botorch.optim.optimize_acqf(
+            new_x, acq_value = botorch.optim.optimize_acqf(
                 acq_function=self.gradInfo,
                 bounds=bounds,
                 q=1,  # Analytic acquisition function.
@@ -145,6 +150,17 @@ class GIBOptimizer(object):
             model.append_train_data(new_x,new_y, strict=False) ## right now we do not add new_s for info
             model.posterior(self.theta_i)  ## hotfix
             self.gradInfo.update_K_xX_dx()
+            
+            
+            # if (acq_value - acq_value_old) < 0.001:
+            #     #print("gathered enough data")
+            #     break
+            
+            if (acq_value - acq_value_old) < 1e-6:
+                #print("gathered enough data")
+                break
+            
+            acq_value_old = acq_value
 
     def one_gradient_step(self,model,theta_i):
         
@@ -154,6 +170,9 @@ class GIBOptimizer(object):
             self.optimizer_torch.zero_grad()
             mean_d, variance_d = model.posterior_derivative(theta_i)
             params_grad = -mean_d.view(1, self.len_params)
+            
+            self.mean_d = mean_d
+            self.variance_d = variance_d    
 
             if self.normalize_gradient:
                 lengthscale = model.covar_module.base_kernel.lengthscale.detach()
@@ -201,8 +220,6 @@ class GIBOptimizer(object):
         
         # # NEEEW : Adjust hyperparameters after information collection 
         # # for better gradient estimate
-        
-        
         # if (model.N >= self.n_max): 
             
         #     # Restrict data to only recent points
@@ -216,10 +233,14 @@ class GIBOptimizer(object):
         #     fit_gpytorch_model(mll)
             
         
-        
         # Take one step in direction of the gradient
         self.one_gradient_step(model, theta_i)
         
         # Add new theta_i to history 
         self.params_history.append(theta_i.clone())
         
+
+    def print_grads(self):
+        
+        print(f'grad_mean : max {self.mean_d.max()} /  min {self.mean_d.min()}')
+        print(f'grad_covar : max {self.variance_d.max()} /  min {self.variance_d.min()}')

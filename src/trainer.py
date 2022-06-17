@@ -63,6 +63,7 @@ class Trainer:
                 print(f'current {curr} / max {max} /batch_mean {batch_mean} /batch_max {batch_max} ')
                 model.print_hypers()
                 model.print_train_mll()
+                optimizer.print_grads()
     
         self.best_x,self.best_y = model.get_best_params()
         

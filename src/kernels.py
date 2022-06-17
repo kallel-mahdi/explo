@@ -185,8 +185,12 @@ class RBFStateKernel(MyRBFKernel,StateKernel):
         def build_kernel(self,ard_num_dims,use_ard,**kwargs):
                         
             MyRBFKernel.__init__(self,ard_num_dims,use_ard,**kwargs)
+            
+            
             self.base_kernel.lengthscale = torch.sqrt(torch.Tensor([ard_num_dims]))
-            #self.base_kernel.lengthscale.requires_grad = False
+            self.outputscale = torch.Tensor([1.])
+            
+            #print(f'self outputscale {self.outputscale.requires_grad}')
         
         def forward(self,x1,x2,**params):
                 
