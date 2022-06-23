@@ -100,7 +100,40 @@ class MLP(torch.nn.Module):
         return outputs
     
             
-            
+class MLPSequential(torch.nn.Module):
+    
+    def __init__(
+                self,
+                Ls: List[int],
+                nonlinearity: Optional[Callable] = torch.nn.ReLU(),
+                ):
+        super().__init__()
+        ops = []
+        for in_size, out_size in zip(Ls[:-1], Ls[1:]):
+            ops.append(torch.nn.Linear(in_size, out_size))
+            ops.append(nonlinearity)
+        self.f = torch.nn.Sequential(*ops[:-1])
+
+    def forward(self, s):
+        return self.f(s)
+
+    def get_weights(self):
+        weights = []
+        for p in self.f.parameters():
+            if p.requires_grad:
+                weights.append(p.detach().clone().flatten())
+        return torch.cat(weights)
+
+    def set_weights(self, weights):
+        idx = 0
+        for p in self.f.parameters():
+            if p.requires_grad:
+                nb_par = 1
+                for s in p.shape:
+                    nb_par *= s
+                p.data = weights[idx:idx + nb_par].view(p.shape)
+                idx += nb_par
+
 if __name__ == '__main__':
     
     mlp = MLP([4,2],add_bias=True)

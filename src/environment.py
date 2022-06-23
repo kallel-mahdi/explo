@@ -103,7 +103,11 @@ class EnvironmentObjective:
             #### no need for grads here
             with torch.no_grad():
                 
-                action = self.mlp(params,states[t].unsqueeze(0)).squeeze()
+                # action = self.mlp(params,states[t].unsqueeze(0)).squeeze()                
+                if params is not None:
+                    action = self.mlp(params,states[t].unsqueeze(0)).squeeze(0)
+                else:
+                    action = self.mlp(states[t].unsqueeze(0)).squeeze(0)
                 
             ###########################
             
