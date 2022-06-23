@@ -116,8 +116,8 @@ class GIBOptimizer(object):
         theta_i = model.train_inputs[0][-1].reshape(1,-1)
         params_history = [theta_i.clone()]
         len_params = theta_i.shape[-1]
-        #optimizer_torch = torch.optim.SGD([theta_i], lr=0.5,momentum=0.5)
-        optimizer_torch = torch.optim.SGD([theta_i], lr=0.1)
+        optimizer_torch = torch.optim.SGD([theta_i], lr=0.5,momentum=0.5)
+        #optimizer_torch = torch.optim.SGD([theta_i], lr=0.1)
         #optimizer_torch = torch.optim.Adam([theta_i], lr=1e-3)
         
         self.__dict__.update(locals())
@@ -151,14 +151,9 @@ class GIBOptimizer(object):
             model.posterior(self.theta_i)  ## hotfix
             self.gradInfo.update_K_xX_dx()
             
-            
-            # if (acq_value - acq_value_old) < 0.001:
+            # if (acq_value - acq_value_old) < 1e-6:
             #     #print("gathered enough data")
             #     break
-            
-            if (acq_value - acq_value_old) < 1e-6:
-                #print("gathered enough data")
-                break
             
             acq_value_old = acq_value
 
