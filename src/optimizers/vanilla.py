@@ -40,7 +40,7 @@ class BOptimizer(object):
       )
       
       ### evaluate new_x (here we evaluate only once)
-      new_y,new_s = objective_env(new_x,self.n_eval)
+      new_y,new_s,_ = objective_env(new_x,self.n_eval)
       
       assert not new_x.requires_grad    
       ### Update training points.

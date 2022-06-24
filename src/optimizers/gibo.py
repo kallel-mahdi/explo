@@ -146,7 +146,7 @@ class GIBOptimizer(object):
                 sequential=False)
             
             # Update training points.
-            new_y,new_s = objective_env(new_x,self.n_eval)
+            new_y,new_s,_ = objective_env(new_x,self.n_eval)
             model.append_train_data(new_x,new_y, strict=False) ## right now we do not add new_s for info
             model.posterior(self.theta_i)  ## hotfix
             self.gradInfo.update_K_xX_dx()
@@ -186,7 +186,7 @@ class GIBOptimizer(object):
         theta_i = self.theta_i
     
         # Evaluate current parameters
-        new_y,new_s = objective_env(theta_i,self.n_eval)
+        new_y,new_s,_ = objective_env(theta_i,self.n_eval)
         model.append_train_data(theta_i,new_y,new_s, strict=False)
         
         

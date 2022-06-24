@@ -67,58 +67,68 @@ class EnvironmentObjective(object):
         Returns:
             Cumulated reward.
         """
-        states, actions, rewards = [],[],[]
+        states, actions, rewards,next_states,dones = [],[],[],[],[]
         r = 0
     
-        states.append(self.manipulate_state(self.env.reset()))
+        next_state = self.env.reset()
         
         for t in range(self.horizon):  # rollout
+            
+            
+            state = torch.Tensor(next_state)
             
             #### no need for grads here
             with torch.no_grad():
                 
                 # action = self.mlp(params,states[t].unsqueeze(0)).squeeze()                
                 if params is not None:
-                    action = self.mlp(params,states[t].unsqueeze(0)).squeeze()
+                    action = self.mlp(params,state.unsqueeze(0)).squeeze()
                     
                 else:
-                    action = self.mlp(states[t].unsqueeze(0)).squeeze(0)
+                    action = self.mlp(state.unsqueeze(0)).squeeze(0)
                 
             ###########################
             
-            state, reward_tmp, done, _ = self.env.step(action.detach().numpy())
+            next_state, reward_tmp, done, _ = self.env.step(action.detach().numpy())
             
-            rewards.append(self.manipulate_reward(reward_tmp))
-            states.append(self.manipulate_state(state))
-            actions.append(action)
-            
+            states.append(torch.tensor(self.manipulate_state(state)))
+            actions.append(torch.tensor(action))
+            rewards.append(torch.tensor(self.manipulate_reward(reward_tmp)))
+            next_states.append(torch.tensor(next_state))
+            dones.append(torch.tensor(done))
             
             if done:
                 
                 break
          
-        rewards = torch.tensor(rewards)
-        actions = torch.stack(actions)
-        states = torch.stack(states)
         
-        return torch.sum(rewards),states
+        states = torch.stack(states)
+        actions = torch.stack(actions)
+        rewards = torch.stack(rewards)
+        next_states = torch.stack(next_states)
+        dones = torch.stack(dones)
+        
+        transitions = [(s1,a,r,s2,d) for s1,a,r,s2,d in zip(states,actions,rewards,next_states,dones)] 
+        
+        return torch.sum(rewards),states,transitions
     
     def run_many(self, params,n_episodes):
        
         rewards = torch.tensor([0], dtype=torch.float32)
-        all_states = []
+        all_states,all_transitions = [],[]
        
         for _ in range(n_episodes):
            
-           reward,states = self.run(params)
+           reward,states,transitions = self.run(params)
            
            rewards += reward
            all_states.append(states)
-           
-        all_states = torch.cat(all_states)     
+           all_transitions +=(transitions)
+        
+        all_states = torch.cat(all_states)
         avg_reward = rewards/n_episodes
         
-        return avg_reward,all_states
+        return avg_reward,all_states,all_transitions
     
            
     def test_params(

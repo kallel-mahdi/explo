@@ -69,7 +69,7 @@ class Tester:
         train_x,test_x = train_test_split(data_x,test_size=n_test)
         train_data = self.run_params(train_x,n_episodes=1) ## run train points only once
         test_data = self.run_params(test_x,self.n_episodes) ## run test points multiple times to get real value
-        _,opt_states = self.objective_env(local_opt.reshape(1,-1))
+        _,opt_states,_ = self.objective_env(local_opt.reshape(1,-1))
         
         print(f'Done generating data')
         

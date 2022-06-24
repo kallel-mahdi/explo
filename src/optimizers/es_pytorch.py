@@ -34,8 +34,8 @@ class ESOptimizer(object):
         params2 = policy_params - eps ## symmetric noise
 
         tmp_env = deepcopy(env)
-        rewards1,states1 = tmp_env.run_many(params1,episodes_per_param)
-        rewards2,states2 = tmp_env.run_many(params2,episodes_per_param)
+        rewards1,_,transitions1 = tmp_env.run_many(params1,episodes_per_param)
+        rewards2,_,transitions2 = tmp_env.run_many(params2,episodes_per_param)
         
         weighted_noise = (1/sigma)*(rewards1*eps - rewards2*eps)*0.5 ## 
         
@@ -83,6 +83,7 @@ class ESOptimizer(object):
 if __name__ == '__main__':
     
 
+    #%cd /home/q123/Desktop/explo/
 
     from src.optimizers.es_pytorch import ESOptimizer
     from src.helpers import setup_experiment
@@ -93,7 +94,7 @@ if __name__ == '__main__':
     kernel_name = "rbf"
 
     env_config,likelihood_config,kernel_config,optimizer_config,trainer_config = get_configs(env_name,kernel_name)
-    _,env = setup_experiment(env_config,kernel_config,likelihood_config,additional_layers=[20,20,20])
+    _,env = setup_experiment(env_config,kernel_config,likelihood_config,additional_layers=[])
 
     optimizer = ESOptimizer(env,torch.zeros(env.mlp.len_params),sigma=1e-2,
                     params_per_step=50,episodes_per_param=1,n_workers=8)
@@ -104,6 +105,6 @@ if __name__ == '__main__':
         optimizer.step()
         
         if i % 3 == 0:
-            avg_reward,_ = env.run_many(optimizer.policy_params,5)
+            avg_reward,_,_ = env.run_many(optimizer.policy_params,5)
             print(f'avg_rewarad {avg_reward} ')
             print(f'policy_params : {optimizer.policy_params}')
