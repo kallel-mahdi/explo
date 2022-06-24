@@ -82,7 +82,8 @@ class ESOptimizer(object):
 
 if __name__ == '__main__':
     
- 
+
+
     from src.optimizers.es_pytorch import ESOptimizer
     from src.helpers import setup_experiment
     from src.config import get_configs
@@ -92,9 +93,9 @@ if __name__ == '__main__':
     kernel_name = "rbf"
 
     env_config,likelihood_config,kernel_config,optimizer_config,trainer_config = get_configs(env_name,kernel_name)
-    _,env = setup_experiment(env_config,kernel_config,likelihood_config,additional_layers=[])
+    _,env = setup_experiment(env_config,kernel_config,likelihood_config,additional_layers=[20,20,20])
 
-    optimizer = ESOptimizer(env,torch.zeros(18),sigma=1e-2,
+    optimizer = ESOptimizer(env,torch.zeros(env.mlp.len_params),sigma=1e-2,
                     params_per_step=50,episodes_per_param=1,n_workers=8)
 
 

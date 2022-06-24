@@ -34,27 +34,21 @@ class EnvironmentObjective(object):
         
         self.__dict__.update(locals())
         
-        discrete = hasattr(env.action_space,"n")
+        discrete = hasattr(env.info.action_space,"n")
 
         if discrete:
-            self.mlp = self.discretize(mlp,num_actions=env.action_space.n)
+            self.mlp = self.discretize(mlp,num_actions=env.info.action_space.n)
         else:
             self.mlp = mlp
         
         
-        self.max_steps = env._max_episode_steps
+        self.horizon = env.info.horizon
         self.timesteps = 0
         self.timesteps_to_reward = {}
-        shape_states = env.observation_space.shape
-        dtype_states = torch.float32
-
-        shape_actions = env.action_space.shape
-        dtype_actions = torch.tensor(env.action_space.sample()).dtype
+     
         
-
     def __call__(self, params,n_episodes=1) :
         return self.run_many(params,n_episodes)
-
 
 
     def run(
@@ -78,7 +72,7 @@ class EnvironmentObjective(object):
     
         states.append(self.manipulate_state(self.env.reset()))
         
-        for t in range(self.max_steps):  # rollout
+        for t in range(self.horizon):  # rollout
             
             #### no need for grads here
             with torch.no_grad():
@@ -102,7 +96,6 @@ class EnvironmentObjective(object):
             if done:
                 
                 break
-         
          
         rewards = torch.tensor(rewards)
         actions = torch.stack(actions)

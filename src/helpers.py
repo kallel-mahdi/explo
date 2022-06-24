@@ -2,12 +2,13 @@ import logging
 import logging.config
 
 import gpytorch
-import gym
 import torch
-from gym.spaces.box import Box
-from gym.spaces.discrete import Discrete
 
-from src.environment import EnvironmentObjective
+from mushroom_rl.utils.spaces import Box, Discrete
+
+from src.environments.objective import EnvironmentObjective
+from src.environments.gym_env import Gym
+
 from src.gp import DEGP, MyGP
 from src.kernels import *
 from src.policy import MLP
@@ -31,8 +32,8 @@ def get_initial_data(mlp,objective_env,n_init):
 
 def setup_policy(env,additional_layers):
     
-    n_inputs  = env.observation_space.shape[0]      
-    action_space = env.action_space
+    n_inputs  = env.info.observation_space.shape[0]
+    action_space = env.info.action_space
     
     if type(action_space) == Discrete:
         ###output one action env will discretize
@@ -82,7 +83,7 @@ def setup_experiment(env_config,
     
     ### build environment and linear policy
     n_init = env_config.pop("n_init")
-    env = gym.make(env_config["env_name"])
+    env = Gym(env_config["env_name"])
     mlp = setup_policy(env,additional_layers)
     
     ### objective env evaluates the policy episodically
