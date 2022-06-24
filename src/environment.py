@@ -8,7 +8,7 @@ import torch
 from gym import wrappers
 
 
-class EnvironmentObjective:
+class EnvironmentObjective(object):
     """API for translating an OpenAI gym environment into a black-box objective
     function for which a parameterized mlp should be optimized.
 
@@ -21,23 +21,23 @@ class EnvironmentObjective:
             environment.
     """
 
+   
     def __init__(
         self,
         env: gym.Env,
         mlp: Callable,
         reward_scale = 1.0,
         reward_shift = 0.0,
-        manipulate_state: Optional[Callable] = None,
-        #manipulate_reward: Optional[Callable] = None,
         *arg,**kwargs
     ):
         """Inits the translation environment to objective."""
-        self.env = env
+        
+        self.__dict__.update(locals())
         
         discrete = hasattr(env.action_space,"n")
 
         if discrete:
-            self.mlp = discretize(mlp,num_actions=env.action_space.n)
+            self.mlp = self.discretize(mlp,num_actions=env.action_space.n)
         else:
             self.mlp = mlp
         
@@ -50,28 +50,7 @@ class EnvironmentObjective:
 
         shape_actions = env.action_space.shape
         dtype_actions = torch.tensor(env.action_space.sample()).dtype
-
-        self._last_episode_length = 0
-        self._last_episode = {
-            "states": torch.empty(
-                (self.max_steps + 1,) + shape_states, dtype=dtype_states
-            ),
-            "actions": torch.empty(
-                (self.max_steps,) + shape_actions, dtype=dtype_actions
-            ),
-            "rewards": torch.empty(self.max_steps, dtype=torch.float32),
-        }
-
         
-        self.manipulate_reward = manipulate_reward(reward_shift,reward_scale)
-
-        self._manipulate_state = manipulate_state
-        if manipulate_state is None:
-            manipulate_state = lambda state: state
-
-        self.manipulate_state = lambda state: manipulate_state(
-            torch.tensor(state, dtype=dtype_states)
-        )
 
     def __call__(self, params,n_episodes=1) :
         return self.run_many(params,n_episodes)
@@ -96,6 +75,7 @@ class EnvironmentObjective:
         """
         states, actions, rewards = [],[],[]
         r = 0
+    
         states.append(self.manipulate_state(self.env.reset()))
         
         for t in range(self.max_steps):  # rollout
@@ -105,7 +85,8 @@ class EnvironmentObjective:
                 
                 # action = self.mlp(params,states[t].unsqueeze(0)).squeeze()                
                 if params is not None:
-                    action = self.mlp(params,states[t].unsqueeze(0)).squeeze(0)
+                    action = self.mlp(params,states[t].unsqueeze(0)).squeeze()
+                    
                 else:
                     action = self.mlp(states[t].unsqueeze(0)).squeeze(0)
                 
@@ -126,9 +107,6 @@ class EnvironmentObjective:
         rewards = torch.tensor(rewards)
         actions = torch.stack(actions)
         states = torch.stack(states)
-
-
-        #print(f'one episode : actions {actions.shape} / states {states.shape}')
         
         return torch.sum(rewards),states
     
@@ -146,8 +124,6 @@ class EnvironmentObjective:
            
         all_states = torch.cat(all_states)     
         avg_reward = rewards/n_episodes
-        
-        #print(f' avg_reward{avg_reward}, all_states{all_states.shape}')
         
         return avg_reward,all_states
     
@@ -188,45 +164,56 @@ class EnvironmentObjective:
             except:
                 self.env.close()
         return reward
+    
+  
+
+    def manipulate_reward(self,reward):
+        
+            """Manipulate reward in every step with shift and scale.
+
+            Args:
+                shift: Reward shift.
+                scale: Reward scale.
+
+            Return:
+                Manipulated reward.
+            """
+         
+            return (reward - self.reward_shift) / self.reward_scale
+
+    def manipulate_state(self,state):
+        
+
+        rslt = torch.tensor(state, dtype=torch.float32)
+        
+        return rslt
 
 
 
-def discretize(function: Callable, num_actions: int):
-        """Discretize output/actions of MLP.
-    For instance necessary for the CartPole environment.
-    Args:
-        function: Mapping states with parameters to actions, e.g. MLP.
-        num_actions: Number of function outputs.
-    Returns:
-        Function with num_actions discrete outputs.
-    """
+    def discretize(self,function: Callable, num_actions: int):
+            """Discretize output/actions of MLP.
+        For instance necessary for the CartPole environment.
+        Args:
+            function: Mapping states with parameters to actions, e.g. MLP.
+            num_actions: Number of function outputs.
+        Returns:
+            Function with num_actions discrete outputs.
+        """
+        
+            
 
-        def discrete_policy_2(state, params):
-            return (function(state, params) > 0.0) * 1
+            def discrete_policy_2(state, params):
+                return (function(state, params) > 0.0) * 1
 
-        def discrete_policy_n(state, params):
-            return torch.argmax(function(state, params))
+            def discrete_policy_n(state, params):
+                return torch.argmax(function(state, params))
 
-        if num_actions == 2:
-            discrete_policy = discrete_policy_2
-        elif num_actions > 2:
-            discrete_policy = discrete_policy_n
-        else:
-            raise (f"Argument num_actions is {num_actions} but has to be greater than 1.")
-        return discrete_policy
+            if num_actions == 2:
+                discrete_policy = discrete_policy_2
+            elif num_actions > 2:
+                discrete_policy = discrete_policy_n
+            else:
+                raise (f"Argument num_actions is {num_actions} but has to be greater than 1.")
+            return discrete_policy
 
-def manipulate_reward(shift: Union[int, float], scale: Union[int, float]):
-    """Manipulate reward in every step with shift and scale.
 
-    Args:
-        shift: Reward shift.
-        scale: Reward scale.
-
-    Return:
-        Manipulated reward.
-    """
-    if shift is None:
-        shift = 0
-    if scale is None:
-        scale = 1
-    return lambda reward: (reward - shift) / scale

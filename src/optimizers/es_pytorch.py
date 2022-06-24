@@ -1,40 +1,41 @@
 
 import gym
 import numpy as np
-import pybullet_envs
 import torch
 from src.environment import EnvironmentObjective
 from src.policy import MLPSequential
 
 
-class BasicNumGrad:
-    def __init__(self, env, policy):
-        self.env_obj = EnvironmentObjective(env, policy)
-        self.beta1 = 0.9
-        self.beta2 = 0.999
-        self.epsilon = 1e-8
-        self.m = torch.zeros_like(policy.get_weights())
-        self.v = torch.zeros_like(self.m)
-
-    def adamize(self, grad, t):
+class Runner:
+    
+    
+    def run(self,params):
         
-        a = np.sqrt(1 - self.beta2 ** t) / (1 - self.beta1 ** t)
-        self.m = self.beta1 * self.m + (1 - self.beta1) * grad
-        self.v = self.beta2 * self.v + (1 - self.beta2) * (grad * grad)
-        step = a * self.m / (np.sqrt(self.v) + self.epsilon)
-        return step
+        
+
+class BasicNumGrad:
+    
+    def __init__(self, env, policy,policy_params):
+        
+        self.env_obj = EnvironmentObjective(env, policy)
+        self.policy_params = policy_params
+        self.optimizer = torch.optim.Adam([self.policy_params])
+        
 
     def approx_grad(self, sigma=1e-1, roll_per_parms=10, param_per_step=10):
-        mu = self.env_obj.mlp.get_weigths()
+        
+        policy_params = self.policy_params
         all_e, all_f = [], []
+        
         for k in range(param_per_step):
-            all_e.append(torch.randn_like(mu) * sigma)
-            self.env_obj.mlp.set_weights(mu + all_e[-1])
+            
+            all_e.append(torch.randn_like(policy_params) * sigma)
+            self.env_obj.mlp.set_weights(policy_params + all_e[-1])
             all_f.append(self.env_obj.run_many(None, roll_per_parms)[0].item())
 
             # mirror perturbation
             all_e.append(-all_e[-1])
-            self.env_obj.mlp.set_weights(mu + all_e[-1])
+            self.env_obj.mlp.set_weights(policy_params + all_e[-1])
             all_f.append(self.env_obj.run_many(None, roll_per_parms)[0].item())
 
         nb_evals = len(all_f)
