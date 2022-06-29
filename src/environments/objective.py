@@ -67,7 +67,7 @@ class EnvironmentObjective(object):
         Returns:
             Cumulated reward.
         """
-        states, actions, rewards,next_states,dones = [],[],[],[],[]
+        states, actions, rewards,next_states,dones,lasts = [],[],[],[],[],[]
         r = 0
     
         next_state = self.env.reset()
@@ -91,11 +91,16 @@ class EnvironmentObjective(object):
             
             next_state, reward_tmp, done, _ = self.env.step(action.detach().numpy())
             
+            last =  (t == (self.horizon-1)) or done
+
+            
             states.append(torch.tensor(self.manipulate_state(state)))
             actions.append(torch.tensor(action))
             rewards.append(torch.tensor(self.manipulate_reward(reward_tmp)))
             next_states.append(torch.tensor(next_state))
             dones.append(torch.tensor(done))
+            lasts.append(torch.tensor(last))
+            
             
             if done:
                 
@@ -107,8 +112,17 @@ class EnvironmentObjective(object):
         rewards = torch.stack(rewards)
         next_states = torch.stack(next_states)
         dones = torch.stack(dones)
+        lasts = torch.stack(lasts)
         
-        transitions = [(s1,a,r,s2,d) for s1,a,r,s2,d in zip(states,actions,rewards,next_states,dones)] 
+        transitions = [
+                        (s1.cpu().detach().numpy(),
+                        a.cpu().detach().numpy(),
+                        r.cpu().detach().numpy(),
+                        s2.cpu().detach().numpy(),
+                        d.cpu().detach().numpy(),
+                        l.cpu().detach().numpy(),) 
+                       for s1,a,r,s2,d,l in zip(states,actions,rewards,next_states,dones,lasts)
+                       ] 
         
         return torch.sum(rewards),states,transitions
     
@@ -204,7 +218,6 @@ class EnvironmentObjective(object):
         """
         
             
-
             def discrete_policy_2(state, params):
                 return (function(state, params) > 0.0) * 1
 

@@ -11,7 +11,7 @@ from src.environments.gym_env import Gym
 
 from src.gp import DEGP, MyGP
 from src.kernels import *
-from src.policy import MLP
+from src.approximators.actor import MLP
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger("MathLog."+__name__)
@@ -94,7 +94,6 @@ def setup_experiment(env_config,
             )
     
     train_x,train_y,train_s = get_initial_data(mlp,objective_env,n_init)
-    
     kernel = setup_kernel(kernel_config,mlp=mlp,train_s=train_s)
     likelihood = gpytorch.likelihoods.GaussianLikelihood(
             **likelihood_config

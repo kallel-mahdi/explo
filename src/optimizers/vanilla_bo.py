@@ -31,6 +31,7 @@ class BOptimizer(object):
       best_value = model.train_targets.max()
       EI = ExpectedImprovement(model=model, best_f=best_value)
       eps = 1e-1
+      
       new_x, _ = optimize_acqf(
         acq_function=EI,
         bounds = torch.tensor([[-eps] * len_params, [eps] * len_params]),

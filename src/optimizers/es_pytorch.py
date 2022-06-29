@@ -16,7 +16,7 @@ class ESOptimizer(object):
         self.optimizer = torch.optim.Adam([self.policy_params])
         
 
-    def run_noisy_params(self,env,policy_params,
+    def run_noisy_actor(self,env,policy_params,
                         seed,sigma,episodes_per_param):
         
         """ Generate and run a pair of symmetric noisy parameters
@@ -34,16 +34,18 @@ class ESOptimizer(object):
         params2 = policy_params - eps ## symmetric noise
 
         tmp_env = deepcopy(env)
-        rewards1,_,transitions1 = tmp_env.run_many(params1,episodes_per_param)
-        rewards2,_,transitions2 = tmp_env.run_many(params2,episodes_per_param)
+        reward1,_,transitions1 = tmp_env.run_many(params1,episodes_per_param)
+        reward2,_,transitions2 = tmp_env.run_many(params2,episodes_per_param)
         
-        weighted_noise = (1/sigma)*(rewards1*eps - rewards2*eps)*0.5 ## 
+        weighted_noise = (1/sigma)*(reward1*eps - reward2*eps)*0.5 ## 
+        transitions = transitions1 + transitions2
         
-        return weighted_noise
+        return weighted_noise,transitions
+    
 
 
 
-    def compute_gradient(self,env,policy_params,sigma,
+    def run_parallel_actors(self,env,policy_params,sigma,
                     params_per_step,episodes_per_param,n_workers=None):
 
         args = [(env,policy_params,i,1,episodes_per_param) for i in range(params_per_step)]
@@ -52,30 +54,41 @@ class ESOptimizer(object):
 
         if n_workers is None : n_workers = mp.cpu_count()
         pool = mp.Pool(n_workers)
-
+        
         # Step 2:  Run processes (we might need to use mapreduce to avoid big memory usage)
-        weighted_noises = pool.starmap(self.run_noisy_params,args) ## list of [(reward*eps)]
+        weighted_noises = pool.starmap(self.run_noisy_actor,args) ## list of [(reward*eps)]
 
         # Step 3: Wait for workers to run then close pool
         pool.close()
         pool.join()
 
-        gradient  = torch.vstack(weighted_noises).mean(dim=0)
-        
-        return gradient
+        return weighted_noises,transitions
     
+    def compute_gradient(self,weighted_noises):
+        
+        gradient  = torch.vstack(weighted_noises).mean(dim=0)
+    
+    
+    def run(self):
+        
+        
+        local_reward,local_states,local_transitions = self.env.run_many(self.policy_params,self.episodes_per_param)
+        
+        weighted_noises,transitions = self.run_parallel_actors(self.env,self.policy_params,self.sigma,
+                    self.params_per_step,self.episodes_per_param)
+        
+        nes_policy_grad = self.compute_gradient(weighted_noises)
+        
+        transitions = transitions + local_transitions
+
+        return nes_policy_grad,local_states,transitions
+
     
     def step(self):
         
-        
-        policy_grad = self.compute_gradient(self.env,self.policy_params,self.sigma,
-                    self.params_per_step,self.episodes_per_param,)
-    
         self.optimizer.zero_grad()        
         self.policy_params.grad = -policy_grad ## optimizer usually minimizes
         self.optimizer.step()
-        
-        return policy_grad
         
         
     
@@ -85,10 +98,10 @@ if __name__ == '__main__':
 
     #%cd /home/q123/Desktop/explo/
 
-    from src.optimizers.es_pytorch import ESOptimizer
-    from src.helpers import setup_experiment
-    from src.config import get_configs
     import torch
+    from src.config import get_configs
+    from src.helpers import setup_experiment
+    from src.optimizers.es_pytorch import ESOptimizer
 
     env_name = "Swimmer-v4"
     kernel_name = "rbf"

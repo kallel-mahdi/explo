@@ -2,7 +2,7 @@ import cma
 import torch
 import gym
 from src.environment import EnvironmentObjective
-from src.policy import MLPSequential
+from src.approximators.actor import MLPSequential
 import pybullet_envs
 
 

@@ -122,10 +122,7 @@ class StateKernel:
     def forward(self,x1,x2,**params):
             
         raise NotImplementedError
-    
-    
-        
-    
+ 
     def run_parameters(self,params_batch,states):
         
         logger.debug(f'mlp :params_batch.shape{params_batch.shape} states.shape {states.shape}')

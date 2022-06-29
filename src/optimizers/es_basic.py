@@ -4,7 +4,7 @@ import numpy as np
 import pybullet_envs
 import torch
 from src.environment import EnvironmentObjective
-from src.policy import MLPSequential
+from src.approximators.actor import MLPSequential
 
 
 class BasicNumGrad:
