@@ -5,8 +5,9 @@ from itertools import chain
 from typing import Callable, List, Optional, Tuple, Union
 
 import torch
-from torch.nn import Identity, Linear, Sequential
 import torch.nn as nn
+import torch.nn.functional as F
+from torch.nn import Identity, Linear, Sequential
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger("ShapeLog."+__name__)
@@ -100,48 +101,16 @@ class MLP(torch.nn.Module):
         logger.debug(f'MLP : actions {outputs.shape}')
         return outputs
     
-            
-class MLPSequential(torch.nn.Module):
-    
-    def __init__(
-                self,
-                Ls: List[int],
-                nonlinearity: Optional[Callable] = torch.nn.ReLU(),
-                ):
-        super().__init__()
-        ops = []
-        for in_size, out_size in zip(Ls[:-1], Ls[1:]):
-            ops.append(torch.nn.Linear(in_size, out_size))
-            ops.append(nonlinearity)
-        self.f = torch.nn.Sequential(*ops[:-1])
-
-    def forward(self, s):
-        return self.f(s)
-
-    def get_weights(self):
-        weights = []
-        for p in self.f.parameters():
-            if p.requires_grad:
-                weights.append(p.detach().clone().flatten())
-        return torch.cat(weights)
-
-    def set_weights(self, weights):
-        idx = 0
-        for p in self.f.parameters():
-            if p.requires_grad:
-                nb_par = 1
-                for s in p.shape:
-                    nb_par *= s
-                p.data = weights[idx:idx + nb_par].view(p.shape)
-                idx += nb_par
-
 
 class ActorNetwork(nn.Module):
+    
     def __init__(self, input_shape, output_shape, n_features, **kwargs):
         super(ActorNetwork, self).__init__()
 
         n_input = input_shape[-1]
         n_output = output_shape[0]
+        
+        #self.dummy_param = nn.Parameter(torch.empty(0))
 
         self._h1 = nn.Linear(n_input, n_features)
         self._h2 = nn.Linear(n_features, n_features)
@@ -153,6 +122,36 @@ class ActorNetwork(nn.Module):
                                 gain=nn.init.calculate_gain('relu'))
         nn.init.xavier_uniform_(self._h3.weight,
                                 gain=nn.init.calculate_gain('linear'))
+    
+    @property
+    def n_params(self):
+        
+        n = 0
+        for p in self.parameters():
+            p_shape = torch.tensor(p.shape)
+            n += torch.prod(p_shape,0)
+        
+        return n
+    
+    @property
+    def device(self):
+        device = next(self.parameters()).device
+        return device
+            
+
+    def add_noise(self,noise):
+        
+        if not torch.is_tensor(noise):        
+            noise = torch.tensor(noise,device=self.device)
+        
+        idx = 0
+        for param in self.parameters():
+            weights = param.data
+            weights_shape = torch.tensor(weights.shape)
+            n_steps = torch.prod(weights_shape,0)
+            noise_param = noise[idx:idx+n_steps].reshape(*weights_shape)
+            param.data += noise_param
+            idx += n_steps
 
     def forward(self, state):
         features1 = F.relu(self._h1(torch.squeeze(state, 1).float()))
@@ -160,7 +159,8 @@ class ActorNetwork(nn.Module):
         a = self._h3(features2)
 
         return a
-
+    
+    
 if __name__ == '__main__':
     
     mlp = MLP([4,2],add_bias=True)
