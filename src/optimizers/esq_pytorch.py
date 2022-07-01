@@ -6,7 +6,7 @@ import torch
 class ESQOptimizer(object):
     
     
-    def __init__(self,states,critic,actor_mlp,actor_params,
+    def __init__(self,critic,actor,
                         sigma,params_per_step,n_workers=None):
         
         if n_workers is None : n_workers = mp.cpu_count()
@@ -14,48 +14,36 @@ class ESQOptimizer(object):
         self.args = locals()
         self.args.pop("self")
         
-        optimizer = torch.optim.Adam([actor_params])
         
-         
-    def advantage_gradient(self,states,critic,actor_mlp,actor_params):
+        self.actor = actor
+        self.optimizer = torch.optim.Adam(actor.model.network.parameters())
+        #self.__dict__.update(locals())
         
-        noisy_actions = actor_mlp(actor_params,states).squeeze().T
-        noisy_q = critic(states,noisy_actions,output_tensor=True) ##  add absorbing flag
-        noisy_q = torch.sum(noisy_q)
-        noisy_grad = torch.autograd.grad(noisy_q,actor_params)
-        
-        return noisy_grad
 
-    def run_noisy_advantage(self,states,critic,actor_mlp,actor_params,
+    def run_noisy_advantage(self,states,critic,actor,
                             sigma,seed):
         
-        
-        
         torch.manual_seed(seed)
-        eps = torch.randn_like(actor_params) * sigma
-        
-        actor_params1 = actor_params + eps
-        actor_params2 = actor_params - eps
-        
-        #grad1 = self.advantage_gradient(states,critic,actor_mlp,actor_params1)
-        #grad2 = self.advantage_gradient(states,critic,actor_mlp,actor_params2)
-        noisy_actions = actor_mlp(actor_params1,states).squeeze().T
+        n_params = actor.model.network.n_params
+        eps = torch.randn(n_params) * sigma
+        actor.model.network.add_noise(eps)
+        #actor2 = actor.model.network.add_noise(-eps)
+    
+        noisy_actions = actor(states,output_tensor=True)
         noisy_q = critic(states,noisy_actions,output_tensor=True) ##  add absorbing flag
         noisy_q = torch.sum(noisy_q)
-        noisy_grad = torch.autograd.grad(noisy_q,actor_params)
+        noisy_grad = torch.autograd.grad(noisy_q,actor.model.network.parameters()) ## hotfix
         
         #return grad1+grad2
         
         return noisy_grad
         
-    def run_parallel_advantage(self,states,critic,actor_mlp,actor_params,
+    def run_parallel_advantage(self,states,critic,actor,
                                sigma,params_per_step,n_workers):
         
+        args = [(states,critic,actor,sigma,seed) for seed in range(params_per_step)]
         
-    
-        args = [(states,critic,actor_mlp,actor_params,sigma,seed) for seed in range(params_per_step)]
-        
-        ctx = mp.get_context('fork')
+        ctx = mp.get_context('spawn')
         
         # Step 1: Init multiprocessing.Pool()
 
@@ -67,12 +55,30 @@ class ESQOptimizer(object):
             # Step 3: Wait for workers to run then close pool
             pool.close()
             pool.join()
-
+            
+        
         return grads
     
-    def run(self):
+    def compute_grads(self,states):
         
-        grads = self.run_parallel_advantage(**self.args)
+        grads = self.run_parallel_advantage(**self.args,states=states)  
+        
+        # Step 4: Aggregate gradients
+        
+        grad_stack = []
+        
+        for i in range(len(grads[0])):
+            
+            grad_stack.append(torch.stack([grad[i] for grad in grads]))
+            
+        grads = tuple(torch.sum(stack,dim=0) for stack in grad_stack)
         
         return grads
+
+    def step(self,states):
         
+        self.optimizer.zero_grad()  
+        actor_grad = self.compute_grads(states)      
+        self.actor.model.network.grad = actor_grad ## optimizer usually minimizes (add -)
+        self.optimizer.step()
+      

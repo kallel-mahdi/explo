@@ -141,17 +141,19 @@ class ActorNetwork(nn.Module):
 
     def add_noise(self,noise):
         
-        if not torch.is_tensor(noise):        
-            noise = torch.tensor(noise,device=self.device)
-        
-        idx = 0
-        for param in self.parameters():
-            weights = param.data
-            weights_shape = torch.tensor(weights.shape)
-            n_steps = torch.prod(weights_shape,0)
-            noise_param = noise[idx:idx+n_steps].reshape(*weights_shape)
-            param.data += noise_param
-            idx += n_steps
+        with torch.no_grad():
+            
+            if not torch.is_tensor(noise):        
+                noise = torch.tensor(noise,device=self.device)
+            
+            idx = 0
+            for param in self.parameters():
+                weights = param.data
+                weights_shape = torch.tensor(weights.shape)
+                n_steps = torch.prod(weights_shape,0)
+                noise_param = noise[idx:idx+n_steps].reshape(*weights_shape)
+                param.data += noise_param
+                idx += n_steps
 
     def forward(self, state):
         features1 = F.relu(self._h1(torch.squeeze(state, 1).float()))

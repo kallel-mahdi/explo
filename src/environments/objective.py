@@ -80,13 +80,16 @@ class EnvironmentObjective(object):
             #### no need for grads here
             with torch.no_grad():
                 
-                # action = self.mlp(params,states[t].unsqueeze(0)).squeeze()                
-                if params is not None:
+                if torch.is_tensor(params):
+                    ### list of parameters for BO
                     action = self.mlp(params,state.unsqueeze(0)).squeeze()
-                    
-                else:
-                    action = self.mlp(state.unsqueeze(0)).squeeze(0)
+                    #print("action shape",action.shape)
                 
+                else :
+                    ### params is a torchregressor of mushroomrl
+                    action = params(state.unsqueeze(0),output_tensor=True).squeeze()
+                    #print("action shape",action.shape)
+                    
             ###########################
             
             next_state, reward_tmp, done, _ = self.env.step(action.detach().numpy())
@@ -95,7 +98,7 @@ class EnvironmentObjective(object):
 
             
             states.append(torch.tensor(self.manipulate_state(state)))
-            actions.append(torch.tensor(action))
+            actions.append(action.detach())
             rewards.append(torch.tensor(self.manipulate_reward(reward_tmp)))
             next_states.append(torch.tensor(next_state))
             dones.append(torch.tensor(done))
