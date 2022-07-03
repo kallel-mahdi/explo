@@ -97,7 +97,7 @@ class EnvironmentObjective(object):
             last =  (t == (self.horizon-1)) or done
 
             
-            states.append(torch.tensor(self.manipulate_state(state)))
+            states.append(self.manipulate_state(state))
             actions.append(action.detach())
             rewards.append(torch.tensor(self.manipulate_reward(reward_tmp)))
             next_states.append(torch.tensor(next_state))
@@ -204,9 +204,7 @@ class EnvironmentObjective(object):
     def manipulate_state(self,state):
         
 
-        rslt = torch.tensor(state, dtype=torch.float32)
-        
-        return rslt
+        return state
 
 
 

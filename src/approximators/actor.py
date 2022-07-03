@@ -1,5 +1,12 @@
+# import logging
+# import logging.config
+
+from os import path
 import logging
-import logging.config
+log_file_path = path.join("/home/q123/Desktop/explo/logging.conf")
+logging.config.fileConfig(log_file_path)
+logger = logging.getLogger("ShapeLog."+__name__)
+
 from copy import deepcopy
 from itertools import chain
 from typing import Callable, List, Optional, Tuple, Union
@@ -9,8 +16,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Identity, Linear, Sequential
 
-logging.config.fileConfig('logging.conf')
-logger = logging.getLogger("ShapeLog."+__name__)
+#logging.config.fileConfig('logging.conf')
+
 
 
 class MLP(torch.nn.Module):
