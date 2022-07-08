@@ -77,10 +77,13 @@ class Gym(Environment):
         # else:
         #     self._convert_action = lambda a: a
         
-        if isinstance(action_space, Discrete):
-            self._convert_action = self.f1
-        else:
-            self._convert_action = self.f2
+        # if isinstance(action_space, Discrete):
+        #     self._convert_action = self.f1
+        # else:
+        #     self._convert_action = self.f2
+        
+        ## MLP policy handles discretization (to be changed)
+        self._convert_action = self.f2
 
         super().__init__(mdp_info)
 

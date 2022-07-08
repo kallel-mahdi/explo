@@ -38,19 +38,22 @@ class GradientInformation(botorch.acquisition.AnalyticAcquisitionFunction):
             theta_i = torch.tensor(theta_i)
         self.theta_i = theta_i
         self.update_K_xX_dx()
+    
+    def K_xX(self,theta_t,X_hat):
+            
+        rslt = self.model.covar_module(theta_t,X_hat).evaluate()
+        
+        return rslt
 
     def update_K_xX_dx(self):
+        
         '''When new x is given update K_xX_dx.'''
         # Pre-compute large part of K_xX_dx.
         X = self.model.train_inputs[0]
         x = self.theta_i.view(-1, self.model.D)
         self.K_xX_dx_part = self._get_KxX_dx(x, X)
 
-    def K_xX(self,theta_t,X_hat):
-        
-        rslt = self.model.covar_module(theta_t,X_hat).evaluate()
-        
-        return rslt
+  
 
     def _get_KxX_dx(self, theta_t, X_hat) :
         '''Computes the analytic derivative of the kernel K(x,X) w.r.t. x.
@@ -116,7 +119,7 @@ class GIBOptimizer(object):
         theta_i = model.train_inputs[0][-1].reshape(1,-1)
         params_history = [theta_i.clone()]
         len_params = theta_i.shape[-1]
-        optimizer_torch = torch.optim.SGD([theta_i], lr=0.5,momentum=0.5)
+        optimizer_torch = torch.optim.SGD([theta_i], lr=0.5)
         #optimizer_torch = torch.optim.SGD([theta_i], lr=0.1)
         #optimizer_torch = torch.optim.Adam([theta_i], lr=1e-3)
         
@@ -124,13 +127,23 @@ class GIBOptimizer(object):
         
         print(f' Gibo will use {self.n_max} last points to fit GP and {self.n_info_samples} info samples')
         
+    
+    def sample_noise(self,theta_i,seed):
+        
+        noise = 1e-5 *torch.rand_like(self.theta_i) 
+        new_x = self.theta_i + noise
+    
+    
+    def sample_acqf(self):
+        pass
+        
     def optimize_information(self,objective_env,model,bounds):
         
         
-        acq_value_old = 100
+        acq_value_old = None
     
         ## Optimize gradient information locally
-        for _ in range(self.n_info_samples):
+        for i in range(self.n_info_samples):
 
             model.posterior(self.theta_i)  ## hotfix
 
@@ -145,17 +158,36 @@ class GIBOptimizer(object):
                 return_best_only=True,
                 sequential=False)
             
-            # Update training points.
+            # noise = 1e-5 *torch.rand_like(self.theta_i) 
+            # new_x = self.theta_i + noise
+            # #Update training points.
             new_y,new_s,_ = objective_env(new_x,self.n_eval)
             model.append_train_data(new_x,new_y, strict=False) ## right now we do not add new_s for info
             model.posterior(self.theta_i)  ## hotfix
             self.gradInfo.update_K_xX_dx()
+
+            if acq_value_old is not None:
+                
+                if (acq_value-acq_value_old) < 1e-2:
+                    #print("gathered enough data")
+                    print(f'breaking info gathering after {i} steps')
+                    break
             
-            # if (acq_value - acq_value_old) < 1e-6:
-            #     #print("gathered enough data")
-            #     break
-            
+                #print(f' acfq {acq_value} acqf diff {acq_value-acq_value_old}')
+                
+            #self.print_sample_distance(new_x)    
             acq_value_old = acq_value
+
+
+    def print_sample_distance(self,new_x):
+        
+        theta_i,kernel_states = self.theta_i,self.kernel_states
+        
+        print(f' L2 distance of theta_i to theta_l is {torch.linalg.norm(theta_i-new_x)}')
+        a1 = self.model.covar_module.mlp(new_x,kernel_states).squeeze().T
+        a2 = self.model.covar_module.mlp(theta_i,kernel_states).squeeze().T
+    
+        print(f' Action distance of theta_i to theta_l is {torch.linalg.norm(a1-a2)}')
 
     def one_gradient_step(self,model,theta_i):
         
@@ -184,10 +216,13 @@ class GIBOptimizer(object):
         
         # Theta_i is directly updated by gradient
         theta_i = self.theta_i
+        
+        print(f'theta_i {self.theta_i}')
     
         # Evaluate current parameters
         new_y,new_s,_ = objective_env(theta_i,self.n_eval)
         model.append_train_data(theta_i,new_y,new_s, strict=False)
+        self.kernel_states=new_s
         
         
         # Adjust hyperparameters before info collection
@@ -205,8 +240,6 @@ class GIBOptimizer(object):
             # Adjust hyperparameters
             mll = ExactMarginalLogLikelihood(model.likelihood, model)
             fit_gpytorch_model(mll)
-            
-    
         
         # Sample locally to optimize gradient information
         self.gradInfo.update_theta_i(theta_i) ## this also update KxX_dx

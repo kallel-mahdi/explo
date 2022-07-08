@@ -1,5 +1,6 @@
 from time import time
 from typing import Callable, Dict, Iterator, List, Optional, Tuple, Union
+from mushroom_rl.utils.spaces import Discrete 
 
 import glfw
 import gym
@@ -34,13 +35,13 @@ class EnvironmentObjective(object):
         
         self.__dict__.update(locals())
         
-        discrete = hasattr(env.info.action_space,"n")
+        discrete = isinstance(env.info.action_space,Discrete)
 
         if discrete:
+            print("discritizing action space")
             self.mlp = self.discretize(mlp,num_actions=env.info.action_space.n)
         else:
             self.mlp = mlp
-        
         
         self.horizon = env.info.horizon
         self.timesteps = 0
@@ -220,6 +221,7 @@ class EnvironmentObjective(object):
         
             
             def discrete_policy_2(state, params):
+                
                 return (function(state, params) > 0.0) * 1
 
             def discrete_policy_n(state, params):

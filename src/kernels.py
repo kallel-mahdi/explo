@@ -25,8 +25,12 @@ class MyRBFKernel(ScaleKernel):
                 lengthscale_constraint=None,
                 lengthscale_hyperprior=None,
                 outputscale_constraint=None,
-                outputscale_hyperprior=None):
-
+                outputscale_hyperprior=None,
+                mlp = None
+                
+                ):
+        
+        print(f'MyRBF received {ard_num_dims} use_ard {use_ard}')
         if use_ard == False :
             ard_num_dims = None
             
@@ -41,12 +45,15 @@ class MyRBFKernel(ScaleKernel):
             outputscale_prior=outputscale_hyperprior,
             outputscale_constraint=outputscale_constraint,
                                                             ) 
+        
+        self.mlp = mlp
             
         # Initialize lengthscale and outputscale to mean of priors.
         if lengthscale_hyperprior is not None:
             self.base_kernel.lengthscale = lengthscale_hyperprior.mean
         if outputscale_hyperprior is not None:
             self.outputscale = outputscale_hyperprior.mean  
+            
         
     def forward(self,x1,x2,**params):
         
@@ -194,9 +201,10 @@ class RBFStateKernel(MyRBFKernel,StateKernel):
             logger.debug(f'x1 {x1.shape} / x2 {x2.shape}')
             #Evaluate current parameters
             a1 = self.run_parameters(x1,self.states)
-            a2 = self.run_parameters(x2,self.states)   
+            a2 = self.run_parameters(x2,self.states) 
+              
             logger.debug(f'a1 {a1.shape} a2 {a2.shape} ')
-            # Compute pairwise pairwise kernel 
+            # Compute pairwise kernel 
             kernel = super().forward(a1, a2, **params)
             logger.debug(f'pair kernel {kernel.shape}')
             

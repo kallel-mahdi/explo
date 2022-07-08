@@ -119,7 +119,7 @@ class MyGP(SingleTaskGP):
             print("##############################")
             
         
-        print("last parameters",self.x_hist[-1])
+        #print("last parameters",self.x_hist[-1])
     
     def print_train_mll(self):
         

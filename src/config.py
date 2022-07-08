@@ -6,7 +6,7 @@ def get_env_configs(env_name):
         if env_name == "CartPole-v1":
 
                 env_config = {
-                        "n_init" : 2,
+                        "n_init" : 1,
                         "reward_scale":500,
                         "reward_shift":0,
                         "env_name":"CartPole-v1",
@@ -14,14 +14,14 @@ def get_env_configs(env_name):
 
                 env_appx_config = {
                         
-                        "n_max":50, ## number of samples used to fit gp
+                        "n_max":20, ## number of samples used to fit gp
                         "n_info": 8 ## number of samples collected to computed local gradient
                 }
                 
         elif env_name == "Swimmer-v4":
 
                 env_config = {
-                        "n_init" : 2,
+                        "n_init" : 1,
                         "reward_scale":350,
                         "reward_shift":0,
                         "env_name":"Swimmer-v4",
@@ -29,14 +29,14 @@ def get_env_configs(env_name):
                 }
 
                 env_appx_config = {
-                        "n_max":100,
+                        "n_max":32,
                         "n_info": 16,
                 }
 
         elif env_name == "Hopper-v2":
 
                 env_config = {
-                        "n_init" : 2,
+                        "n_init" : 1,
                         "reward_scale":1000, 
                         "reward_shift":1,
                         "env_name":"Hopper-v2",
@@ -64,23 +64,23 @@ def get_configs(env_name,kernel_name):
 
         if env_name == "CartPole-v1": ## cartpole is a very noisy task
                 
-                likelihood_config = {
-                        "noise_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.2,b=0.4),
-                        "noise_constraint":gpytorch.constraints.constraints.Interval(0.2,0.4)
-                        }
-        
+             likelihood_config = {
+                "noise_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.5,b=0.501),
+                "noise_constraint":gpytorch.constraints.constraints.Interval(0.5,0.501)
+                }
+             
         else : 
-                    likelihood_config = {
-                        "noise_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.01,b=0.02),
-                        "noise_constraint":gpytorch.constraints.constraints.Interval(0.01,0.02)
-                        }
+                likelihood_config = {
+                "noise_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.01,b=0.02),
+                "noise_constraint":gpytorch.constraints.constraints.Interval(0.01,0.02)
+                }
 
 
         kernel_config = {
-                "use_ard":False,
+                "use_ard":True,
                 "kernel_name":kernel_name,
-                "lengthscale_hyperprior":gpytorch.priors.torch_priors.GammaPrior(3.0,6.0),
-                "lengthscale_constraint":gpytorch.constraints.constraints.GreaterThan(0.001),
+                "lengthscale_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.01,b=0.3),
+                "lengthscale_constraint":gpytorch.constraints.constraints.Interval(0.01,0.3),
                 "outputscale_constraint":gpytorch.constraints.constraints.GreaterThan(0.01),
                 "outputscale_hyperprior":gpytorch.priors.torch_priors.NormalPrior(loc=2.0,scale=1.0),
                 }

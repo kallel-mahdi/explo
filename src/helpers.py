@@ -43,7 +43,7 @@ def setup_policy(env,additional_layers):
     else : raise ValueError("Unknown action space")
     
     logger.warning(f'MLP dimensions : {[n_inputs] +additional_layers + [n_actions]}')
-    mlp = MLP([n_inputs]+additional_layers+[n_actions],add_bias=True)
+    mlp = MLP([n_inputs]+additional_layers+[n_actions],add_bias=False)
     
     return mlp
 
@@ -53,12 +53,15 @@ def setup_kernel(kernel_config,mlp,train_s):
     
     ### If not using a statekernel: ard_num_dims = num_parameters
     ### Otherwise statekernel handles ard_num_dims dynamically
-    kernel_config["ard_num_dims"]=mlp.len_params
-    print(f'Using ard_num_dims = {mlp.len_params}')
     
     if kernel_name == "rbf":
         
-        kernel = MyRBFKernel(**kernel_config)
+        kernel_config["ard_num_dims"]=mlp.len_params
+        print(f'Using ard_num_dims = {mlp.len_params}')
+        
+    if kernel_name == "rbf":
+        
+        kernel = MyRBFKernel(**kernel_config,mlp=mlp)
     
     elif kernel_name == "linearstate":
             
