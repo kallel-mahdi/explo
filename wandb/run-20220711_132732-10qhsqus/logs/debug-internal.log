@@ -1,0 +1,8 @@
+2022-07-11 13:27:32,536 INFO    MainThread:112864 [internal.py:wandb_internal():90] W&B internal server running at pid: 112864, started at: 2022-07-11 13:27:32.536758
+2022-07-11 13:27:32,537 INFO    WriterThread:112864 [datastore.py:open_for_write():75] open: /home/q123/Desktop/explo/wandb/run-20220711_132732-10qhsqus/run-10qhsqus.wandb
+2022-07-11 13:27:32,538 DEBUG   SenderThread:112864 [sender.py:send():236] send: header
+2022-07-11 13:27:32,538 DEBUG   SenderThread:112864 [sender.py:send():236] send: run
+2022-07-11 13:28:02,022 DEBUG   HandlerThread:112864 [handler.py:handle_request():140] handle_request: shutdown
+2022-07-11 13:28:02,023 INFO    HandlerThread:112864 [handler.py:finish():806] shutting down handler
+2022-07-11 13:28:02,543 INFO    WriterThread:112864 [datastore.py:close():279] close: /home/q123/Desktop/explo/wandb/run-20220711_132732-10qhsqus/run-10qhsqus.wandb
+2022-07-11 13:28:06,098 INFO    MainThread:112864 [internal.py:handle_exit():80] Internal process exited

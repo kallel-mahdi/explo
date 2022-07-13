@@ -1,0 +1,21 @@
+{
+    "os": "Linux-5.13.0-51-generic-x86_64-with-glibc2.31",
+    "python": "3.10.4",
+    "heartbeatAt": "2022-07-11T09:24:49.923960",
+    "startedAt": "2022-07-11T09:24:48.356914",
+    "docker": null,
+    "cpu_count": 8,
+    "cuda": null,
+    "args": null,
+    "state": "running",
+    "program": "experiments/trainer-jvsc-f8f65b9a-d97d-471f-b110-aee8dcbdefb1d3f7cdd4-c853-46d1-a72e-e83d614f8c8f.ipynb",
+    "root": "/home/q123/Desktop/explo",
+    "git": {
+        "remote": "https://github.com/kallel-mahdi/explo",
+        "commit": "641bc497f757c046d0e37fd566c68ae9b4862cc0"
+    },
+    "email": "kallel@eurecom.fr",
+    "host": "q123-ThinkPad-E14-Gen-2",
+    "username": "q123",
+    "executable": "/home/q123/miniconda3/envs/boptim/bin/python"
+}

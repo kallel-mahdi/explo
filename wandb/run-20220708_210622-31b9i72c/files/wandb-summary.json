@@ -1,0 +1,1 @@
+{"policy_return": 0.046000003814697266, "policy_return_at_grad": 0.08000000566244125, "_timestamp": 1657307283, "_runtime": 101, "_step": 2618, "acq_value": 3.537983772616826e-08, "param_distance_to_local": 0.1635642945766449, "action_distance_to_local": 0.7214813828468323, "avg_grad": 6.674811447737738e-05, "max_covar": 9.999999717180685e-10}

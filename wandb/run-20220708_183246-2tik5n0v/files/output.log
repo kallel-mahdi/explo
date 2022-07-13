@@ -1,0 +1,119 @@
+theta_i tensor([[0., 0., 0., 0., 0.]])
+MyRBF received 10 use_ard True
+/home/q123/miniconda3/envs/boptim/lib/python3.10/site-packages/gpytorch/lazy/lazy_tensor.py:1741: UserWarning: torch.triangular_solve is deprecated in favor of torch.linalg.solve_triangularand will be removed in a future PyTorch release.
+torch.linalg.solve_triangular has its arguments reversed and does not return a copy of one of the inputs.
+X = torch.triangular_solve(B, A).solution
+should be replaced with
+X = torch.linalg.solve_triangular(A, B). (Triggered internally at  ../aten/src/ATen/native/BatchLinearAlgebra.cpp:1672.)
+  Linv = torch.triangular_solve(Eye, L, upper=False).solution
+/home/q123/Desktop/explo/src/optimizers/gibo.py:196: UserWarning: The use of `x.T` on tensors of dimension other than 2 to reverse their shape is deprecated and it will throw an error in a future release. Consider `x.mT` to transpose batches of matricesor `x.permute(*torch.arange(x.ndim - 1, -1, -1))` to reverse the dimensions of a tensor. (Triggered internally at  ../aten/src/ATen/native/TensorShape.cpp:2318.)
+  a1 = self.model.covar_module.mlp(new_x,kernel_states).squeeze().T
+theta_i tensor([[-0.0005, -0.0157,  0.0008,  0.0222,  0.0135]])
+MyRBF received 18 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0047,  0.0431, -0.0154]])
+MyRBF received 22 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0047,  0.0431, -0.0154]])
+MyRBF received 44 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0047,  0.0431, -0.0154]])
+MyRBF received 35 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0047,  0.0432, -0.0153]])
+MyRBF received 32 use_ard True
+current 0.018000001087784767 / max 0.08799999952316284 /batch_mean 0.03280000016093254 /batch_max 0.06600000709295273
+##############################
+covar_lengthscale max 199.74185180664062 / min 155.4024658203125                      covar_outputscale 0.009999999776482582                     noise 0.009999999776482582
+##############################
+MLL : 1.35150146484375
+grad_mean : max 3.362667848705314e-05 /  min -9.932334705808898e-07
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[-0.0028, -0.0251,  0.0047,  0.0432, -0.0153]])
+MyRBF received 38 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0047,  0.0432, -0.0152]])
+MyRBF received 38 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0047,  0.0432, -0.0152]])
+MyRBF received 30 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0047,  0.0432, -0.0152]])
+MyRBF received 36 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0047,  0.0432, -0.0152]])
+MyRBF received 45 use_ard True
+current 0.046000003814697266 / max 0.09000000357627869 /batch_mean 0.03200000151991844 /batch_max 0.04800000414252281
+##############################
+covar_lengthscale max 157.03330993652344 / min 93.78584289550781                      covar_outputscale 0.009999999776482582                     noise 0.009999999776482582
+##############################
+MLL : 1.3530712127685547
+grad_mean : max 8.951506606535986e-05 /  min -4.286543116904795e-06
+grad_covar : max 1.3404735099697973e-09 /  min 9.999999717180685e-10
+theta_i tensor([[-0.0028, -0.0251,  0.0047,  0.0432, -0.0151]])
+MyRBF received 27 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0047,  0.0432, -0.0151]])
+MyRBF received 42 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0047,  0.0432, -0.0151]])
+MyRBF received 48 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0047,  0.0432, -0.0151]])
+MyRBF received 46 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0047,  0.0432, -0.0150]])
+MyRBF received 31 use_ard True
+current 0.04400000348687172 / max 0.09600000828504562 /batch_mean 0.02720000222325325 /batch_max 0.04400000348687172
+##############################
+covar_lengthscale max 111.89704895019531 / min 44.70237731933594                      covar_outputscale 0.009999999776482582                     noise 0.009999999776482582
+##############################
+MLL : 1.3494058847427368
+grad_mean : max 0.0001723258465062827 /  min -6.177865543577354e-06
+grad_covar : max 4.640970274749634e-09 /  min 9.999999717180685e-10
+theta_i tensor([[-0.0028, -0.0251,  0.0047,  0.0432, -0.0150]])
+MyRBF received 26 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0047,  0.0433, -0.0149]])
+MyRBF received 37 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0047,  0.0433, -0.0149]])
+MyRBF received 52 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0047,  0.0433, -0.0149]])
+MyRBF received 25 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0047,  0.0433, -0.0148]])
+MyRBF received 30 use_ard True
+current 0.018000001087784767 / max 0.10400000959634781 /batch_mean 0.030000001192092896 /batch_max 0.046000003814697266
+##############################
+covar_lengthscale max 199.882080078125 / min 183.00750732421875                      covar_outputscale 0.009999999776482582                     noise 0.009999999776482582
+##############################
+MLL : 1.3552547693252563
+grad_mean : max 2.2578013158636168e-05 /  min -1.3441332384900306e-06
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[-0.0028, -0.0251,  0.0047,  0.0433, -0.0148]])
+MyRBF received 39 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0048,  0.0433, -0.0147]])
+MyRBF received 33 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0048,  0.0433, -0.0147]])
+MyRBF received 34 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0048,  0.0433, -0.0147]])
+MyRBF received 47 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0048,  0.0433, -0.0146]])
+MyRBF received 44 use_ard True
+current 0.04000000283122063 / max 0.10400000959634781 /batch_mean 0.03680000454187393 /batch_max 0.05800000578165054
+##############################
+covar_lengthscale max 197.8888702392578 / min 162.0921173095703                      covar_outputscale 0.010000000707805157                     noise 0.009999999776482582
+##############################
+MLL : 1.3486011028289795
+grad_mean : max 4.151340544922277e-05 /  min -6.289065368036972e-06
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[-0.0028, -0.0251,  0.0048,  0.0433, -0.0146]])
+MyRBF received 43 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0048,  0.0434, -0.0145]])
+MyRBF received 40 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0048,  0.0434, -0.0145]])
+MyRBF received 36 use_ard True
+theta_i tensor([[-0.0028, -0.0251,  0.0048,  0.0434, -0.0145]])
+MyRBF received 24 use_ard True
+Exception in thread NetStatThr:
+Traceback (most recent call last):
+  File "/home/q123/miniconda3/envs/boptim/lib/python3.10/threading.py", line 1009, in _bootstrap_inner
+    self.run()
+  File "/home/q123/miniconda3/envs/boptim/lib/python3.10/threading.py", line 946, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/q123/miniconda3/envs/boptim/lib/python3.10/site-packages/wandb/sdk/wandb_run.py", line 152, in check_network_status
+    status_response = self._interface.communicate_network_status()
+  File "/home/q123/miniconda3/envs/boptim/lib/python3.10/site-packages/wandb/sdk/interface/interface.py", line 138, in communicate_network_status
+    resp = self._communicate_network_status(status)
+  File "/home/q123/miniconda3/envs/boptim/lib/python3.10/site-packages/wandb/sdk/interface/interface_shared.py", line 405, in _communicate_network_status
+    resp = self._communicate(req, local=True)
+  File "/home/q123/miniconda3/envs/boptim/lib/python3.10/site-packages/wandb/sdk/interface/interface_shared.py", line 226, in _communicate
+    return self._communicate_async(rec, local=local).get(timeout=timeout)
+  File "/home/q123/miniconda3/envs/boptim/lib/python3.10/site-packages/wandb/sdk/interface/interface_shared.py", line 231, in _communicate_async
+    raise Exception("The wandb backend process has shutdown")

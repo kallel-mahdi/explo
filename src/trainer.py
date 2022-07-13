@@ -3,13 +3,21 @@ import pickle
 import matplotlib.pyplot as plt
 import  torch
 import  numpy as np
+import wandb
 class Trainer:
     
     def __init__(self,model,objective_env,optimizer,
-                 n_steps,report_freq,save_best=False,):
+                 n_steps,report_freq,
+                 save_best=False,
+                 wandb_logger=False):
         
         self.__dict__.update(locals())
-    
+        optimizer.trainer = self
+        
+        if wandb_logger:
+            
+            wandb.init(project="explo",name=None) 
+            
     
     def save_bests(self):
 
@@ -31,8 +39,6 @@ class Trainer:
         targets = model.y_hist.squeeze().numpy()
         n_trials = targets.shape[0]
         best_performance=np.zeros(n_trials)
-
-
 
         for i in range(1,n_trials):
 
@@ -73,6 +79,12 @@ class Trainer:
         
 
         return self.best_x,self.best_y
+
+    def log(self,dictionary):
+        
+        if self.wandb_logger :
+            
+            wandb.log(dictionary)
                 
 
 

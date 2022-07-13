@@ -110,6 +110,7 @@ class StateKernel:
         """ sometimes we need to reset the states used by the kernel
         This usually requires re insantiating the base kernel (RBF or Linear ..) """
             
+        #print(f'received train_s {train_s.shape} n_actions {mlp.n_actions}')
         self.kernel_config["ard_num_dims"] = train_s.shape[0] * mlp.n_actions
         self.build_kernel(**self.kernel_config)
         self.states = train_s

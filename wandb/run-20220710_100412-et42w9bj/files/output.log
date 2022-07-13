@@ -1,0 +1,244 @@
+theta_i tensor([[0., 0., 0., 0.]])
+MyRBF received 9 use_ard True
+acq_diff 0.29082635045051575
+acq_diff 0.18613660335540771
+acq_diff 0.23352402448654175
+acq_diff 0.1386183500289917
+acq_diff 0.14318478107452393
+acq_diff 0.12907910346984863
+acq_diff 0.11591088771820068
+theta_i tensor([[-0.0108, -0.1132,  0.0117,  0.1724]])
+MyRBF received 58 use_ard True
+acq_diff 0.0006715544732287526
+acq_diff 0.0005721829365938902
+breaking info gathering after 3 steps
+current 0.28200003504753113 / max 0.5220000743865967 /batch_mean 0.28200003504753113 /batch_max 0.28200003504753113
+##############################
+covar_lengthscale max 7.6157732009887695 / min 7.6157732009887695                      covar_outputscale 1.0                     noise 0.500499963760376
+##############################
+MLL : -0.6208704710006714
+grad_mean : max 0.03185250610113144 /  min 0.0041680363938212395
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[-0.0066, -0.1111,  0.0148,  0.1884]])
+MyRBF received 100 use_ard True
+acq_diff 0.00041647162288427353
+acq_diff 0.0005173708777874708
+breaking info gathering after 3 steps
+current 0.20999997854232788 / max 0.5220000743865967 /batch_mean 0.20999997854232788 /batch_max 0.20999997854232788
+##############################
+covar_lengthscale max 10.0 / min 10.0                      covar_outputscale 1.0                     noise 0.500499963760376
+##############################
+MLL : -0.6098804473876953
+grad_mean : max 0.02766932174563408 /  min -0.003411987330764532
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[-0.0039, -0.1128,  0.0164,  0.2022]])
+MyRBF received 56 use_ard True
+acq_diff 1.1735045291061397e-07
+acq_diff 8.458948741463246e-08
+breaking info gathering after 3 steps
+current 0.5760000348091125 / max 0.5760000348091125 /batch_mean 0.5760000348091125 /batch_max 0.5760000348091125
+##############################
+covar_lengthscale max 8.738689422607422 / min 7.487475395202637                      covar_outputscale 0.010005868971347809                     noise 0.500007688999176
+##############################
+MLL : -0.6017308235168457
+grad_mean : max 0.00016354682156816125 /  min 5.0142803956987336e-05
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[-0.0039, -0.1127,  0.0164,  0.2023]])
+MyRBF received 64 use_ard True
+acq_diff 4.511105089477496e-08
+acq_diff 3.6910591916239355e-08
+breaking info gathering after 3 steps
+current 0.11600000411272049 / max 0.5760000348091125 /batch_mean 0.11600000411272049 /batch_max 0.11600000411272049
+##############################
+covar_lengthscale max 9.777236938476562 / min 8.005382537841797                      covar_outputscale 0.010000189766287804                     noise 0.5000065565109253
+##############################
+MLL : -0.598593533039093
+grad_mean : max 0.00016578279610257596 /  min 5.766376852989197e-05
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[-0.0038, -0.1126,  0.0165,  0.2023]])
+MyRBF received 55 use_ard True
+acq_diff 5.651600076816976e-08
+acq_diff 4.705185574493953e-08
+breaking info gathering after 3 steps
+current 0.0860000029206276 / max 0.7540000081062317 /batch_mean 0.0860000029206276 /batch_max 0.0860000029206276
+##############################
+covar_lengthscale max 9.292449951171875 / min 7.417461395263672                      covar_outputscale 0.010001406073570251                     noise 0.5000060200691223
+##############################
+MLL : -0.6070216298103333
+grad_mean : max 0.0005022837431170046 /  min 0.00010922978253802285
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[-0.0038, -0.1124,  0.0165,  0.2025]])
+MyRBF received 88 use_ard True
+acq_diff 4.860214630753035e-08
+acq_diff 3.886401600539102e-08
+breaking info gathering after 3 steps
+current 0.33000001311302185 / max 0.7540000081062317 /batch_mean 0.33000001311302185 /batch_max 0.33000001311302185
+##############################
+covar_lengthscale max 11.308149337768555 / min 9.383689880371094                      covar_outputscale 0.010000052861869335                     noise 0.5000054836273193
+##############################
+MLL : -0.6047284007072449
+grad_mean : max 0.00026086100842803717 /  min 7.548518624389544e-05
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[-0.0037, -0.1123,  0.0166,  0.2025]])
+MyRBF received 56 use_ard True
+acq_diff 1.0687153917388059e-07
+acq_diff 6.762331850040937e-08
+breaking info gathering after 3 steps
+current 0.0860000029206276 / max 0.7540000081062317 /batch_mean 0.0860000029206276 /batch_max 0.0860000029206276
+##############################
+covar_lengthscale max 9.40160083770752 / min 7.487144947052002                      covar_outputscale 0.010000507347285748                     noise 0.5000052452087402
+##############################
+MLL : -0.6064889430999756
+grad_mean : max 0.0005706073134206235 /  min 0.0001828724198276177
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[-0.0036, -0.1120,  0.0167,  0.2027]])
+MyRBF received 139 use_ard True
+acq_diff 2.1306959752109833e-08
+acq_diff 2.0360175767564215e-08
+breaking info gathering after 3 steps
+current 0.45000001788139343 / max 0.7540000081062317 /batch_mean 0.45000001788139343 /batch_max 0.45000001788139343
+##############################
+covar_lengthscale max 12.39335823059082 / min 11.78988265991211                      covar_outputscale 0.010002529248595238                     noise 0.5000050067901611
+##############################
+MLL : -0.6072487235069275
+grad_mean : max 0.0004926631809212267 /  min 0.00014962725981604308
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[-0.0034, -0.1117,  0.0167,  0.2029]])
+MyRBF received 124 use_ard True
+acq_diff 1.6464127838844433e-08
+acq_diff 1.3553631106333341e-08
+breaking info gathering after 3 steps
+current 0.1679999977350235 / max 0.7540000081062317 /batch_mean 0.1679999977350235 /batch_max 0.1679999977350235
+##############################
+covar_lengthscale max 11.390966415405273 / min 11.135619163513184                      covar_outputscale 0.010007685050368309                     noise 0.5000048875808716
+##############################
+MLL : -0.6068933606147766
+grad_mean : max 0.0004248647019267082 /  min 0.00012370031618047506
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[-0.0034, -0.1115,  0.0168,  0.2031]])
+MyRBF received 58 use_ard True
+acq_diff 0.0056415945291519165
+acq_diff 0.005482375621795654
+breaking info gathering after 3 steps
+current 0.6640000939369202 / max 0.7540000081062317 /batch_mean 0.6640000939369202 /batch_max 0.6640000939369202
+##############################
+covar_lengthscale max 7.706230163574219 / min 0.11884675920009613                      covar_outputscale 0.009999999776482582                     noise 0.5
+##############################
+MLL : -0.6021340489387512
+grad_mean : max 0.13369794189929962 /  min 0.04586593061685562
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0288, -0.0447,  0.0397,  0.2615]])
+MyRBF received 142 use_ard True
+acq_diff 7.048984116408974e-07
+acq_diff 6.70225745125208e-07
+breaking info gathering after 3 steps
+current 0.25200000405311584 / max 0.7540000081062317 /batch_mean 0.25200000405311584 /batch_max 0.25200000405311584
+##############################
+covar_lengthscale max 13.270197868347168 / min 11.912186622619629                      covar_outputscale 0.010005041025578976                     noise 0.5
+##############################
+MLL : -0.6016070246696472
+grad_mean : max -2.4689634301466867e-05 /  min -0.0001549704174976796
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0288, -0.0447,  0.0397,  0.2615]])
+MyRBF received 149 use_ard True
+acq_diff 9.365646747028222e-08
+acq_diff 8.822200925351353e-08
+breaking info gathering after 3 steps
+current 0.3580000102519989 / max 0.7540000081062317 /batch_mean 0.3580000102519989 /batch_max 0.3580000102519989
+##############################
+covar_lengthscale max 126.57938385009766 / min 12.21285343170166                      covar_outputscale 0.009999999776482582                     noise 0.5
+##############################
+MLL : -0.5991811752319336
+grad_mean : max 0.0001646351011004299 /  min -1.7793510778574273e-05
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0288, -0.0447,  0.0397,  0.2615]])
+MyRBF received 238 use_ard True
+acq_diff 2.21230584429577e-06
+acq_diff 2.3399043129757047e-06
+breaking info gathering after 3 steps
+current 0.4780000150203705 / max 0.7540000081062317 /batch_mean 0.4780000150203705 /batch_max 0.4780000150203705
+##############################
+covar_lengthscale max 23.56187629699707 / min 15.42800521850586                      covar_outputscale 0.010005922056734562                     noise 0.5
+##############################
+MLL : -0.6045764684677124
+grad_mean : max 0.0006277922657318413 /  min -2.7234505978412926e-05
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0291, -0.0443,  0.0398,  0.2614]])
+MyRBF received 111 use_ard True
+acq_diff 2.3490940748160938e-08
+acq_diff 1.79039716385887e-08
+breaking info gathering after 3 steps
+current 0.4100000858306885 / max 0.7540000081062317 /batch_mean 0.4100000858306885 /batch_max 0.4100000858306885
+##############################
+covar_lengthscale max 137.62791442871094 / min 10.541594505310059                      covar_outputscale 0.009999999776482582                     noise 0.5
+##############################
+MLL : -0.5982722640037537
+grad_mean : max 0.00011335321323713288 /  min -9.5923514891183e-06
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0291, -0.0443,  0.0398,  0.2614]])
+MyRBF received 201 use_ard True
+acq_diff 1.8800510588334873e-06
+acq_diff 1.6591620806138963e-06
+breaking info gathering after 3 steps
+current 0.2239999920129776 / max 1.0 /batch_mean 0.2239999920129776 /batch_max 0.2239999920129776
+##############################
+covar_lengthscale max 20.276439666748047 / min 14.177629470825195                      covar_outputscale 0.010002866387367249                     noise 0.5
+##############################
+MLL : -0.6099638938903809
+grad_mean : max 0.0007857006276026368 /  min 8.495157089782879e-06
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0294, -0.0439,  0.0398,  0.2614]])
+MyRBF received 92 use_ard True
+acq_diff 7.37375103199156e-08
+acq_diff 5.349500042939326e-08
+breaking info gathering after 3 steps
+current 0.12800000607967377 / max 1.0 /batch_mean 0.12800000607967377 /batch_max 0.12800000607967377
+##############################
+covar_lengthscale max 40.00434112548828 / min 9.598100662231445                      covar_outputscale 0.010000195354223251                     noise 0.5
+##############################
+MLL : -0.6108492016792297
+grad_mean : max 0.00025978658231906593 /  min 2.3389551643049344e-05
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0295, -0.0438,  0.0398,  0.2614]])
+MyRBF received 131 use_ard True
+acq_diff 4.679341145674698e-07
+acq_diff 4.749990694108419e-07
+breaking info gathering after 3 steps
+current 0.1380000114440918 / max 1.0 /batch_mean 0.1380000114440918 /batch_max 0.1380000114440918
+##############################
+covar_lengthscale max 30.430845260620117 / min 11.445847511291504                      covar_outputscale 0.010000002570450306                     noise 0.5
+##############################
+MLL : -0.6130242943763733
+grad_mean : max 0.00037025721394456923 /  min 3.070423554163426e-05
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0296, -0.0436,  0.0399,  0.2615]])
+MyRBF received 209 use_ard True
+acq_diff 9.25132553675212e-07
+acq_diff 9.079631126951426e-07
+breaking info gathering after 3 steps
+current 0.3059999942779541 / max 1.0 /batch_mean 0.3059999942779541 /batch_max 0.3059999942779541
+##############################
+covar_lengthscale max 19.586030960083008 / min 14.457724571228027                      covar_outputscale 0.010005430318415165                     noise 0.5
+##############################
+MLL : -0.6128875613212585
+grad_mean : max 0.0004140254168305546 /  min 3.6325578548712656e-05
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0298, -0.0434,  0.0399,  0.2615]])
+MyRBF received 137 use_ard True
+acq_diff 1.250520654139109e-06
+acq_diff 1.299156792811118e-06
+breaking info gathering after 3 steps
+current 0.25200000405311584 / max 1.0 /batch_mean 0.25200000405311584 /batch_max 0.25200000405311584
+##############################
+covar_lengthscale max 18.298240661621094 / min 11.705599784851074                      covar_outputscale 0.010012618266046047                     noise 0.5
+##############################
+MLL : -0.6177561283111572
+grad_mean : max 0.0011316774180158973 /  min 0.00010110853327205405
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+/home/q123/Desktop/explo
+MathLog.src.helpers : WARNING : MLP dimensions : [4, 1]
+discritizing action space
+MyRBF received 40 use_ard True
+ Gibo will use 20 last points to fit GP and 8 info samples
+/home/q123/miniconda3/envs/boptim/lib/python3.10/site-packages/wandb/sdk/lib/ipython.py:47: DeprecationWarning: Importing display from IPython.core.display is deprecated since IPython 7.14, please import from IPython display
+  from IPython.core.display import display, HTML  # type: ignore

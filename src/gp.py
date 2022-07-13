@@ -11,6 +11,7 @@ from gpytorch.distributions import MultivariateNormal
 from gpytorch.means import ConstantMean
 
 from src.kernels import *
+from src.means import *
 
 
 logging.config.fileConfig('logging.conf')
@@ -38,7 +39,7 @@ class MyGP(SingleTaskGP):
         super().__init__(train_X = train_x, 
                          train_Y= train_y.reshape(-1,1),
                         likelihood= likelihood,
-                        mean_module =ConstantMean(), ## prior mean = 0
+                        mean_module =MyConstantMean(), ## prior mean = 0
                         covar_module = kernel,
                         #### NEWW NORMALIZATION
                         # outcome_transform=Standardize(m=train_y.shape[-1]),
@@ -48,23 +49,31 @@ class MyGP(SingleTaskGP):
         self.N = train_x.shape[0]
         self.D = train_x.shape[1] 
         self.mlp = mlp
-
+    
+    
+    
+    def set_module_data(self,mean,states):
+        
+        if  isinstance(self.covar_module,StateKernel):
+            
+            self.mean_module.set_train_data(mean,states)
+            
+            self.covar_module.set_train_data(states,self.mlp)
+            
     
     def set_train_data(self,train_x,train_y,train_s=None,strict=False):
         
         super().set_train_data(inputs=train_x,targets=train_y,strict=strict)
         self.N = train_x.shape[0]
         
-        if  isinstance(self.covar_module,StateKernel) and not (train_s is None):
-            
-            self.covar_module.set_train_data(train_s,self.mlp)
-            
+        
         
     def append_train_data(self,new_x, new_y,new_s=None,strict=False):
         
         """updates only train_x and train_y (maybe eventually add train_s)
         """
         
+        #print(f'new_x {new_x.shape} new_y {new_y.shape}')
         ### concatenate new data
         train_x = torch.cat([self.train_inputs[0], new_x])
         train_y = torch.cat([self.train_targets, new_y])
@@ -143,18 +152,6 @@ class DEGP(MyGP):
 
         super().__init__(*args,**kwargs)
         
-    def get_L_lower(self):
-        """Get Cholesky decomposition L, where L is a lower triangular matrix.
-
-        Returns:
-            Cholesky decomposition L.
-        """
-        return (
-            self.prediction_strategy.lik_train_train_covar.root_decomposition()
-            .root.evaluate()
-            .detach()
-        )
-
     
     def get_KXX_inv(self):
         """Get the inverse matrix of K(X,X).
@@ -193,6 +190,7 @@ class DEGP(MyGP):
         """
        
         theta_t2 = theta_t.clone().detach() ## hotfix otherwise 0 hessian
+        ## this might be a cause of error, try to find method to compute using k(theta,theta)
         hessian = torch.autograd.functional.hessian(func=lambda theta : self.covar_module(theta_t,theta_t2).evaluate(),
                                                     inputs=(theta_t))
     
@@ -216,7 +214,8 @@ class DEGP(MyGP):
         Kxx_dx2 = self._get_Kxx_dx2(theta_t)
         KXX_inv = self.get_KXX_inv()
         
-        mean_d = K_xX_dx @ KXX_inv @ self.train_targets
+        y_bar = self.mean_module(self.train_inputs[0])
+        mean_d = K_xX_dx @ KXX_inv @ (self.train_targets- y_bar )
         
         variance_d =  Kxx_dx2 - K_xX_dx @ KXX_inv @ K_xX_dx.transpose(1, 2)
                     

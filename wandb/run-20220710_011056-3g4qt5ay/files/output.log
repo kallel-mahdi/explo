@@ -1,0 +1,274 @@
+theta_i tensor([[0., 0., 0., 0., 0.]])
+acq_diff 0.036252666264772415
+acq_diff 0.030845969915390015
+acq_diff 0.030408784747123718
+acq_diff 0.026107564568519592
+acq_diff 0.028134986758232117
+acq_diff 0.029461324214935303
+acq_diff 0.027204200625419617
+acq_diff 0.029474034905433655
+acq_diff 0.031336814165115356
+acq_diff 0.025781571865081787
+acq_diff 0.02469688653945923
+acq_diff 0.02326267957687378
+acq_diff 0.02497193217277527
+acq_diff 0.026718348264694214
+acq_diff 0.026405543088912964
+theta_i tensor([[ 0.0008,  0.0009, -0.0062,  0.0023, -0.0030]])
+acq_diff 0.022174835205078125
+acq_diff 0.02195274829864502
+acq_diff 0.02466118335723877
+acq_diff 0.026359975337982178
+acq_diff 0.025320053100585938
+acq_diff 0.021042704582214355
+acq_diff 0.02255350351333618
+acq_diff 0.021908223628997803
+acq_diff 0.022549808025360107
+acq_diff 0.017982006072998047
+acq_diff 0.01833784580230713
+acq_diff 0.024902403354644775
+acq_diff 0.02004075050354004
+acq_diff 0.017908751964569092
+acq_diff 0.02036428451538086
+current 0.018000001087784767 / max 0.03800000250339508 /batch_mean 0.018000001087784767 /batch_max 0.018000001087784767
+##############################
+linear model covar_lengthscale max 0.1111111119389534 / min 0.1111111119389534
+variance  tensor([[0.6931]], grad_fn=<SoftplusBackward0>)
+noise 0.500499963760376
+##############################
+MLL : -0.5881643891334534
+grad_mean : max 0.00876825675368309 /  min -0.02917572855949402
+grad_covar : max 0.012784301303327084 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0052,  0.0045, -0.0208,  0.0067, -0.0113]])
+acq_diff 4.524283170326271e-10
+acq_diff 4.976712375537318e-10
+breaking info gathering after 3 steps
+current 0.020000001415610313 / max 0.03800000250339508 /batch_mean 0.020000001415610313 /batch_max 0.020000001415610313
+##############################
+linear model covar_lengthscale max 0.10000000149011612 / min 0.10000000149011612
+variance  tensor([[7.9323e-05]], grad_fn=<SoftplusBackward0>)
+noise 0.5000043511390686
+##############################
+MLL : -0.5724085569381714
+grad_mean : max 1.577410785102984e-06 /  min -5.5263080867007375e-06
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0052,  0.0045, -0.0208,  0.0067, -0.0113]])
+acq_diff 3.82736686788121e-09
+acq_diff 3.3885143579936994e-09
+breaking info gathering after 3 steps
+current 0.018000001087784767 / max 0.03800000250339508 /batch_mean 0.018000001087784767 /batch_max 0.018000001087784767
+##############################
+linear model covar_lengthscale max 0.1111111119389534 / min 0.1111111119389534
+variance  tensor([[0.0002]], grad_fn=<SoftplusBackward0>)
+noise 0.5000032186508179
+##############################
+MLL : -0.5724095106124878
+grad_mean : max 3.098466550000012e-06 /  min -1.8124525013263337e-05
+grad_covar : max 4.088724026019008e-09 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0052,  0.0045, -0.0208,  0.0067, -0.0113]])
+acq_diff 5.577760475716786e-13
+acq_diff 6.098125476805549e-13
+breaking info gathering after 3 steps
+current 0.018000001087784767 / max 0.03800000250339508 /batch_mean 0.018000001087784767 /batch_max 0.018000001087784767
+##############################
+linear model covar_lengthscale max 0.10000000149011612 / min 0.10000000149011612
+variance  tensor([[2.8191e-06]], grad_fn=<SoftplusBackward0>)
+noise 0.5000032186508179
+##############################
+MLL : -0.5724070072174072
+grad_mean : max 1.0742919442918719e-07 /  min -2.462642783029878e-07
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0052,  0.0045, -0.0208,  0.0067, -0.0113]])
+acq_diff 3.810860960129503e-09
+acq_diff 3.170853801748308e-09
+breaking info gathering after 3 steps
+current 0.020000001415610313 / max 0.03800000250339508 /batch_mean 0.020000001415610313 /batch_max 0.020000001415610313
+##############################
+linear model covar_lengthscale max 0.10000000149011612 / min 0.10000000149011612
+variance  tensor([[0.0002]], grad_fn=<SoftplusBackward0>)
+noise 0.5000024437904358
+##############################
+MLL : -0.5724023580551147
+grad_mean : max 6.910911906743422e-06 /  min -2.2300082491710782e-05
+grad_covar : max 4.5809351867376336e-09 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0052,  0.0045, -0.0209,  0.0067, -0.0113]])
+acq_diff 1.0058585908634399e-12
+acq_diff 1.0590486820838407e-12
+breaking info gathering after 3 steps
+current 0.018000001087784767 / max 0.03800000250339508 /batch_mean 0.018000001087784767 /batch_max 0.018000001087784767
+##############################
+linear model covar_lengthscale max 0.1111111119389534 / min 0.1111111119389534
+variance  tensor([[3.4953e-06]], grad_fn=<SoftplusBackward0>)
+noise 0.500002384185791
+##############################
+MLL : -0.5724030137062073
+grad_mean : max 1.502711057810302e-07 /  min -3.8939410273997055e-07
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0052,  0.0045, -0.0209,  0.0067, -0.0113]])
+acq_diff 2.591050929368066e-09
+acq_diff 2.2209860617294908e-09
+breaking info gathering after 3 steps
+current 0.018000001087784767 / max 0.03800000250339508 /batch_mean 0.018000001087784767 /batch_max 0.018000001087784767
+##############################
+linear model covar_lengthscale max 0.125 / min 0.125
+variance  tensor([[0.0002]], grad_fn=<SoftplusBackward0>)
+noise 0.5000021457672119
+##############################
+MLL : -0.572407603263855
+grad_mean : max 5.265957042865921e-06 /  min -2.0988476535421796e-05
+grad_covar : max 3.0821543095527204e-09 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0052,  0.0045, -0.0209,  0.0067, -0.0113]])
+acq_diff 3.5437111023384205e-09
+acq_diff 3.740744602964696e-09
+breaking info gathering after 3 steps
+current 0.018000001087784767 / max 0.08000000566244125 /batch_mean 0.018000001087784767 /batch_max 0.018000001087784767
+##############################
+linear model covar_lengthscale max 0.1111111119389534 / min 0.1111111119389534
+variance  tensor([[0.0002]], grad_fn=<SoftplusBackward0>)
+noise 0.500001847743988
+##############################
+MLL : -0.572498083114624
+grad_mean : max 9.993520507123321e-06 /  min -2.5709730834932998e-05
+grad_covar : max 3.925560765338787e-09 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0052,  0.0045, -0.0209,  0.0067, -0.0113]])
+acq_diff 1.6911277933573388e-11
+acq_diff 1.441477492925003e-11
+breaking info gathering after 3 steps
+current 0.020000001415610313 / max 0.08000000566244125 /batch_mean 0.020000001415610313 /batch_max 0.020000001415610313
+##############################
+linear model covar_lengthscale max 0.10000000149011612 / min 0.10000000149011612
+variance  tensor([[1.4499e-05]], grad_fn=<SoftplusBackward0>)
+noise 0.5000013113021851
+##############################
+MLL : -0.5724882483482361
+grad_mean : max 9.565667369315634e-07 /  min -1.6979321344479104e-06
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0052,  0.0045, -0.0209,  0.0067, -0.0113]])
+acq_diff 1.1673293442981958e-09
+acq_diff 1.1872458571815514e-09
+breaking info gathering after 3 steps
+current 0.02200000174343586 / max 0.08000000566244125 /batch_mean 0.02200000174343586 /batch_max 0.02200000174343586
+##############################
+linear model covar_lengthscale max 0.10000000149011612 / min 0.10000000149011612
+variance  tensor([[0.0001]], grad_fn=<SoftplusBackward0>)
+noise 0.5000011324882507
+##############################
+MLL : -0.5724904537200928
+grad_mean : max 8.183951649698429e-06 /  min -1.5713316315668635e-05
+grad_covar : max 3.4127363157665513e-09 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0052,  0.0045, -0.0209,  0.0067, -0.0113]])
+acq_diff 8.026756342927044e-13
+acq_diff 8.240005899828873e-13
+breaking info gathering after 3 steps
+current 0.05800000578165054 / max 0.08000000566244125 /batch_mean 0.05800000578165054 /batch_max 0.05800000578165054
+##############################
+linear model covar_lengthscale max 0.125 / min 0.125
+variance  tensor([[3.3726e-06]], grad_fn=<SoftplusBackward0>)
+noise 0.500001072883606
+##############################
+MLL : -0.5725194811820984
+grad_mean : max 1.9266221329417021e-07 /  min -4.2212326434309944e-07
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0052,  0.0045, -0.0209,  0.0067, -0.0113]])
+acq_diff 3.4147424471386856e-13
+acq_diff 3.930345632285892e-13
+breaking info gathering after 3 steps
+current 0.020000001415610313 / max 0.08000000566244125 /batch_mean 0.020000001415610313 /batch_max 0.020000001415610313
+##############################
+linear model covar_lengthscale max 0.1111111119389534 / min 0.1111111119389534
+variance  tensor([[2.2928e-06]], grad_fn=<SoftplusBackward0>)
+noise 0.5000007748603821
+##############################
+MLL : -0.5725207328796387
+grad_mean : max 1.1020458856592086e-07 /  min -3.0203707979126193e-07
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0052,  0.0045, -0.0209,  0.0067, -0.0113]])
+acq_diff 1.4104377388246547e-12
+acq_diff 1.6052159601542826e-12
+breaking info gathering after 3 steps
+current 0.01600000075995922 / max 0.08000000566244125 /batch_mean 0.01600000075995922 /batch_max 0.01600000075995922
+##############################
+linear model covar_lengthscale max 0.1111111119389534 / min 0.1111111119389534
+variance  tensor([[4.5544e-06]], grad_fn=<SoftplusBackward0>)
+noise 0.5000007748603821
+##############################
+MLL : -0.5725195407867432
+grad_mean : max 2.0295652802815312e-07 /  min -5.888066993975372e-07
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0052,  0.0045, -0.0209,  0.0067, -0.0113]])
+acq_diff 1.623357698266048e-12
+acq_diff 1.3131683240796832e-12
+breaking info gathering after 3 steps
+current 0.018000001087784767 / max 0.08000000566244125 /batch_mean 0.018000001087784767 /batch_max 0.018000001087784767
+##############################
+linear model covar_lengthscale max 0.1111111119389534 / min 0.1111111119389534
+variance  tensor([[4.6856e-06]], grad_fn=<SoftplusBackward0>)
+noise 0.5000007748603821
+##############################
+MLL : -0.5725163221359253
+grad_mean : max 2.248073940336326e-07 /  min -6.62439163079398e-07
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0052,  0.0045, -0.0209,  0.0067, -0.0113]])
+acq_diff 2.773649365739317e-13
+acq_diff 3.3982365532647663e-13
+breaking info gathering after 3 steps
+current 0.01600000075995922 / max 0.08000000566244125 /batch_mean 0.01600000075995922 /batch_max 0.01600000075995922
+##############################
+linear model covar_lengthscale max 0.10000000149011612 / min 0.10000000149011612
+variance  tensor([[2.0204e-06]], grad_fn=<SoftplusBackward0>)
+noise 0.5000007748603821
+##############################
+MLL : -0.572422444820404
+grad_mean : max 6.587752920950152e-08 /  min -2.582906120096595e-07
+grad_covar : max 9.999999717180685e-10 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0052,  0.0045, -0.0209,  0.0067, -0.0113]])
+acq_diff 7.75703767885716e-09
+acq_diff 9.108958920478472e-09
+breaking info gathering after 3 steps
+current 0.030000003054738045 / max 0.08000000566244125 /batch_mean 0.030000003054738045 /batch_max 0.030000003054738045
+##############################
+linear model covar_lengthscale max 0.125 / min 0.125
+variance  tensor([[0.0003]], grad_fn=<SoftplusBackward0>)
+noise 0.5000007748603821
+##############################
+MLL : -0.5724350810050964
+grad_mean : max 9.325260180048645e-06 /  min -4.184391218586825e-05
+grad_covar : max 2.3874232368825687e-08 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0052,  0.0045, -0.0209,  0.0067, -0.0113]])
+acq_diff 8.289205766232044e-09
+acq_diff 1.0501040037524945e-08
+breaking info gathering after 3 steps
+current 0.020000001415610313 / max 0.08000000566244125 /batch_mean 0.020000001415610313 /batch_max 0.020000001415610313
+##############################
+linear model covar_lengthscale max 0.10000000149011612 / min 0.10000000149011612
+variance  tensor([[0.0003]], grad_fn=<SoftplusBackward0>)
+noise 0.5000007748603821
+##############################
+MLL : -0.5724353194236755
+grad_mean : max 1.3157397916074842e-05 /  min -3.963501512771472e-05
+grad_covar : max 1.5459271196505142e-08 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0052,  0.0045, -0.0209,  0.0067, -0.0113]])
+acq_diff 5.154021209818893e-09
+acq_diff 5.309530592967349e-09
+breaking info gathering after 3 steps
+current 0.05400000512599945 / max 0.08000000566244125 /batch_mean 0.05400000512599945 /batch_max 0.05400000512599945
+##############################
+linear model covar_lengthscale max 0.10000000149011612 / min 0.10000000149011612
+variance  tensor([[0.0003]], grad_fn=<SoftplusBackward0>)
+noise 0.5000006556510925
+##############################
+MLL : -0.5724623799324036
+grad_mean : max 1.3083606972941197e-05 /  min -3.240911610191688e-05
+grad_covar : max 8.01125210614373e-09 /  min 9.999999717180685e-10
+theta_i tensor([[ 0.0052,  0.0045, -0.0209,  0.0067, -0.0113]])
+acq_diff 2.616964422941237e-09
+acq_diff 2.7992399509457755e-09
+breaking info gathering after 3 steps
+current 0.020000001415610313 / max 0.08000000566244125 /batch_mean 0.020000001415610313 /batch_max 0.020000001415610313
+##############################
+linear model covar_lengthscale max 0.1111111119389534 / min 0.1111111119389534
+variance  tensor([[0.0002]], grad_fn=<SoftplusBackward0>)
+noise 0.5000006556510925
+##############################
+MLL : -0.5724267959594727
+grad_mean : max 8.683589840075001e-06 /  min -2.0770372429979034e-05
