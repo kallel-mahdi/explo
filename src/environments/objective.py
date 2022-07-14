@@ -29,6 +29,7 @@ class EnvironmentObjective(object):
         mlp: Callable,
         reward_scale = 1.0,
         reward_shift = 0.0,
+        manipulate_state=True,
         *arg,**kwargs
     ):
         """Inits the translation environment to objective."""
@@ -46,6 +47,16 @@ class EnvironmentObjective(object):
         self.horizon = env.info.horizon
         self.timesteps = 0
         self.timesteps_to_reward = {}
+        
+        self.state_normalizer = StateNormalizer()
+        
+        if manipulate_state == False:
+            self.manipulate_state = lambda state: state
+
+        elif manipulate_state == True:
+            
+            print(f'Using state normalization')
+            self.manipulate_state = lambda state: self.state_normalizer(state)
      
         
     def __call__(self, params,n_episodes=1) :
@@ -235,4 +246,61 @@ class EnvironmentObjective(object):
                 raise (f"Argument num_actions is {num_actions} but has to be greater than 1.")
             return discrete_policy
 
+
+
+class StateNormalizer:
+    """Class for state normalization.
+
+    Implementation of Welfords online algorithm. For further information see
+        thesis appendix A.3.
+
+    Attributes:
+        eps: Small value to prevent division by zero
+        normalize_params: Normalization function for policy parameters.
+        unnormalize_params: Unnormalization function for policy parameters.
+    """
+
+    def __init__(
+        self, eps: float = 1e-8, normalize_params=None, unnormalize_params=None
+    ):
+        # Init super.
+        self.eps = eps
+        self.steps = 0
+        self._mean_of_states = 0.0
+        self._sum_of_squared_errors = 0.0
+        self.mean = 0.0
+        self.std = 1.0
+       
+    def _welford_update(self, state: torch.Tensor):
+        """Helper function for manipulate.
+
+        Internally trackes mean and std according to the seen states.
+
+        Args:
+            state: New state.
+        """
+        # https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Welford's_online_algorithm
+        self.steps += 1
+        delta = state - self._mean_of_states
+        self._mean_of_states += delta / self.steps
+        self._sum_of_squared_errors += delta * (state - self._mean_of_states)
+    
+ 
+    def manipulate(self, state: torch.Tensor) -> torch.Tensor:
+        
+        """Actually manipulate a state with the tracked mean and standard
+        deviation.
+
+        Args:
+            state: State to normalize.
+
+        Returns:
+            Normalized state.
+        """
+        self._welford_update(state)
+        normalized_state = (state - self.mean) / self.std
+        return normalized_state
+    
+    def __call__(self, state):
+        return self.manipulate(state)
 

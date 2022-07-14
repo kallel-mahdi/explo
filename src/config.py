@@ -38,7 +38,7 @@ def get_env_configs(env_name):
                 env_config = {
                         "n_init" : 1,
                         "reward_scale":1000, 
-                        "reward_shift":1,
+                        "reward_shift":-1,
                         "env_name":"Hopper-v2",
                 }
 

@@ -114,7 +114,9 @@ class MyGP(SingleTaskGP):
         if isinstance(self.covar_module,MyRBFKernel):
                 
             print("##############################")
-            print(f'covar_lengthscale max {self.covar_module.base_kernel.lengthscale.max()} / min {self.covar_module.base_kernel.lengthscale.min()}  \
+            print(f'covar_lengthscale max {self.covar_module.base_kernel.lengthscale.max()} \
+                    min {self.covar_module.base_kernel.lengthscale.min()}  \
+                    mean{self.covar_module.base_kernel.lengthscale.mean()} \
                     covar_outputscale {self.covar_module.outputscale.item()} \
                     noise {self.likelihood.noise_covar.noise.item()}')
             print("##############################")

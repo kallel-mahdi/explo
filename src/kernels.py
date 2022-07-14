@@ -192,8 +192,11 @@ class RBFStateKernel(MyRBFKernel,StateKernel):
             MyRBFKernel.__init__(self,ard_num_dims,use_ard,**kwargs)
             
             
-            self.base_kernel.lengthscale = torch.sqrt(torch.Tensor([ard_num_dims]))
+            #self.base_kernel.lengthscale = torch.sqrt(torch.Tensor([ard_num_dims]))
+            self.base_kernel.lengthscale = torch.Tensor([1.])
             self.outputscale = torch.Tensor([1.])
+            self.ard_num_dims = ard_num_dims
+            
             
             #print(f'self outputscale {self.outputscale.requires_grad}')
         
@@ -203,10 +206,13 @@ class RBFStateKernel(MyRBFKernel,StateKernel):
             #Evaluate current parameters
             a1 = self.run_parameters(x1,self.states)
             a2 = self.run_parameters(x2,self.states) 
+             
+            norm = torch.sqrt(torch.Tensor([self.ard_num_dims]))
+            #print("nooooorm",norm)
               
             logger.debug(f'a1 {a1.shape} a2 {a2.shape} ')
             # Compute pairwise kernel 
-            kernel = super().forward(a1, a2, **params)
+            kernel = super().forward(a1/norm, a2/norm, **params)
             logger.debug(f'pair kernel {kernel.shape}')
             
             return kernel

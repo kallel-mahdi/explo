@@ -121,7 +121,7 @@ class GIBOptimizer(object):
         theta_i = model.train_inputs[0][-1].reshape(1,-1)
         params_history = [theta_i.clone()]
         len_params = theta_i.shape[-1]
-        optimizer_torch = torch.optim.SGD([theta_i], lr=0.5)
+        optimizer_torch = torch.optim.SGD([theta_i], lr=0.5,weight_decay=0.00001)
         #optimizer_torch = torch.optim.Adam([theta_i], lr=0.1)
         
         self.__dict__.update(locals())
@@ -229,13 +229,21 @@ class GIBOptimizer(object):
         
     def compute_inv_hessian(self,params):
         
-        n_states = self.kernel_states.shape[0]
+        n_ard_dims = self.kernel_states.shape[0]
         grads = torch.autograd.functional.jacobian(self.current_actions,params).squeeze()
         lengthscales = self.model.covar_module.base_kernel.lengthscale.squeeze()
-        #grads = (lengthscales * grads.T).T
-        hessian = 0.5 * (1/n_states)*(grads.T @ grads)
         
-        inv_hessian = torch.linalg.inv(hessian + 1e-2*torch.eye(16))
+        grads = ( (1/lengthscales) * grads.T).T
+        hessian = 0.5 *(1/n_ard_dims)*(grads.T @ grads)
+        n = hessian.shape[0]
+        inv_hessian = torch.linalg.inv(hessian + 1e-1*torch.eye(n))
+        
+        
+        
+        #hessian = 0.5 * (1/n_states)*(grads.T @ grads)
+        # n = hessian.shape[0]
+        # inv_hessian = torch.linalg.inv(hessian + 1e-2*torch.eye(n))
+        
         return inv_hessian
 
         
@@ -266,8 +274,8 @@ class GIBOptimizer(object):
                 print(f'inv hessian mean {torch.mean(torch.linalg.eigh(inv_hessian)[0])} gradient mean {torch.mean(torch.abs(params_grad))} ')
             
             
-            if self.standard_deviation_scaling:
-                params_grad = params_grad / torch.diag(variance_d.view(self.len_params, self.len_params))
+            # if self.standard_deviation_scaling:
+            #     params_grad = params_grad / torch.diag(variance_d.view(self.len_params, self.len_params))
 
             theta_i.grad = params_grad  # set gradients
             self.optimizer_torch.step()   
