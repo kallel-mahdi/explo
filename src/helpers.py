@@ -1,17 +1,17 @@
 import logging
 import logging.config
+import random
 
 import gpytorch
+import numpy as np
 import torch
-
 from mushroom_rl.utils.spaces import Box, Discrete
 
-from src.environments.objective import EnvironmentObjective
+from src.approximators.actor import MLP
 from src.environments.gym_env import Gym
-
+from src.environments.objective import EnvironmentObjective
 from src.gp import DEGP, MyGP
 from src.kernels import *
-from src.approximators.actor import MLP
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger("MathLog."+__name__)
@@ -30,7 +30,7 @@ def get_initial_data(mlp,objective_env,n_init):
     
     return (train_x,train_y,train_s)
 
-def setup_policy(env,additional_layers):
+def setup_policy(env,policy_config):
     
     n_inputs  = env.info.observation_space.shape[0]
     action_space = env.info.action_space
@@ -42,8 +42,9 @@ def setup_policy(env,additional_layers):
         n_actions = action_space.shape[0]
     else : raise ValueError("Unknown action space")
     
-    logger.warning(f'MLP dimensions : {[n_inputs] +additional_layers + [n_actions]}')
-    mlp = MLP([n_inputs]+additional_layers+[n_actions],add_bias=False)
+    mlp = MLP([n_inputs]+policy_config["add_layer"]+[n_actions],add_bias=policy_config["add_bias"])
+    
+    logger.warning(f'MLP dimensions : {[n_inputs] +policy_config["add_layer"] + [n_actions]}')
     
     return mlp
 
@@ -81,13 +82,14 @@ def setup_kernel(kernel_config,mlp,train_s):
 
     
 def setup_experiment(env_config,
-                     kernel_config,likelihood_config,additional_layers=[]):
+                     kernel_config,likelihood_config,policy_config,
+                     seed=None):
     
     
     ### build environment and linear policy
     n_init = env_config.pop("n_init")
     env = Gym(env_config["env_name"])
-    mlp = setup_policy(env,additional_layers)
+    mlp = setup_policy(env,policy_config)
     
     ### objective env evaluates the policy episodically
     objective_env = EnvironmentObjective(
@@ -107,6 +109,24 @@ def setup_experiment(env_config,
                  kernel = kernel,likelihood=likelihood,
                  mlp =mlp)
     
+    if seed is not None :
+        
+        fix_seed(objective_env,seed)
+    
     return model,objective_env
 
+
+
+def fix_seed(objective_env,seed):
+    
+    print("fixing seed to ",seed)
+    
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.manual_seed(seed)
+    torch.random.manual_seed(seed)
+    objective_env.env.seed(seed)
+    #objective_env.env.action_space.seed(seed)
+    
+    
 

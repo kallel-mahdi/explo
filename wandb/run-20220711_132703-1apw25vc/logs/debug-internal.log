@@ -1,7 +1,0 @@
-2022-07-11 13:27:03,718 INFO    MainThread:112720 [internal.py:wandb_internal():90] W&B internal server running at pid: 112720, started at: 2022-07-11 13:27:03.718103
-2022-07-11 13:27:03,719 INFO    WriterThread:112720 [datastore.py:open_for_write():75] open: /home/q123/Desktop/explo/wandb/run-20220711_132703-1apw25vc/run-1apw25vc.wandb
-2022-07-11 13:27:03,720 DEBUG   SenderThread:112720 [sender.py:send():236] send: header
-2022-07-11 13:27:03,720 DEBUG   SenderThread:112720 [sender.py:send():236] send: run
-2022-07-11 13:27:14,885 WARNING MainThread:112720 [internal.py:wandb_internal():153] Internal process interrupt: 1
-2022-07-11 13:27:24,035 WARNING MainThread:112720 [internal.py:wandb_internal():153] Internal process interrupt: 2
-2022-07-11 13:27:24,035 ERROR   MainThread:112720 [internal.py:wandb_internal():156] Internal process interrupted.

@@ -121,13 +121,13 @@ class GIBOptimizer(object):
         theta_i = model.train_inputs[0][-1].reshape(1,-1)
         params_history = [theta_i.clone()]
         len_params = theta_i.shape[-1]
-        optimizer_torch = torch.optim.SGD([theta_i], lr=0.5,weight_decay=0.00001)
+        optimizer_torch = torch.optim.SGD([theta_i], lr=0.5,weight_decay=1e-5)
         #optimizer_torch = torch.optim.Adam([theta_i], lr=0.1)
         
         self.__dict__.update(locals())
         
         self.trainer = None ## initialized by trainer
-        self.n_steps = 0
+        self.n_samples = 0
         self.n_grad_steps = 0
         
         print(f' Gibo will use {self.n_max} last points to fit GP and {self.n_info_samples} info samples')
@@ -168,7 +168,7 @@ class GIBOptimizer(object):
         ## Optimize gradient information locally
         for i in range(self.n_info_samples):
             
-            self.n_steps +=1            
+            self.n_samples += 1
 
             model.posterior(self.theta_i)  ## hotfix
             
@@ -183,8 +183,12 @@ class GIBOptimizer(object):
             
             
             new_x,acq_value = self.sample_acqf(bounds)
-            new_y,new_s,_ = objective_env(new_x,self.n_eval)
-            self.trainer.log({"policy_return":new_y})
+            new_y,new_s,_ = objective_env(new_x,1)
+            
+            ### log the real return (not noisy)
+            j,_,_ = objective_env(new_x,5)
+            self.trainer.log(self.n_samples,{"policy_return":j})
+            ##############################
             model.append_train_data(new_x,new_y, strict=False) ## right now we do not add new_s for info
             model.posterior(self.theta_i)  ## hotfix
             self.gradInfo.update_K_xX_dx()
@@ -192,14 +196,15 @@ class GIBOptimizer(object):
             if acq_value_old is not None:
                 
                 if (acq_value-acq_value_old) < 1e-2 and i>2:
-                    print(f'breaking info gathering after {i} steps')
-                    self.trainer.log({"n_info_points":i})
+                    
+                    print("acq_diff",acq_value-acq_value_old,"n_info",i)
+                    
+                    self.trainer.log(self.n_samples,{"n_info_points":i})
                     break                
             
-                print(f'acq_diff {acq_value-acq_value_old}')
-                self.trainer.log({"acq_diff":acq_value-acq_value_old})
+                self.trainer.log(self.n_samples,{"acq_diff":acq_value-acq_value_old})
             
-            self.trainer.log({"acq_value":acq_value})
+            self.trainer.log(self.n_samples,{"acq_value":acq_value})
             self.log_sample_info(new_x)
             
             acq_value_old = acq_value
@@ -216,7 +221,7 @@ class GIBOptimizer(object):
         param_distance_to_local = torch.linalg.norm(theta_i-new_x)
         action_distance_to_local = torch.linalg.norm(a1-a2)
         
-        self.trainer.log({
+        self.trainer.log(self.n_samples,{
             "param_distance_to_local":param_distance_to_local,
             "action_distance_to_local":action_distance_to_local,
         })
@@ -271,8 +276,12 @@ class GIBOptimizer(object):
                 params_grad = torch.nn.functional.normalize(params_grad)
                 inv_hessian = self.compute_inv_hessian(self.theta_i)
                 params_grad = (inv_hessian @ params_grad.T).T
-                print(f'inv hessian mean {torch.mean(torch.linalg.eigh(inv_hessian)[0])} gradient mean {torch.mean(torch.abs(params_grad))} ')
-            
+                
+                self.trainer.log(self.n_samples,{
+                    "hessian_avg_eigvalue":torch.mean(torch.linalg.eigh(inv_hessian)[0]),
+                    "gradient_avg(abs)":torch.mean(torch.abs(params_grad))
+                })
+                
             
             # if self.standard_deviation_scaling:
             #     params_grad = params_grad / torch.diag(variance_d.view(self.len_params, self.len_params))
@@ -280,7 +289,7 @@ class GIBOptimizer(object):
             theta_i.grad = params_grad  # set gradients
             self.optimizer_torch.step()   
             
-            self.trainer.log({
+            self.trainer.log(self.n_samples,{
                     "avg_grad":self.mean_d.max(),
                     "max_covar":self.variance_d.max(),
                 })
@@ -300,26 +309,32 @@ class GIBOptimizer(object):
             mll = ExactMarginalLogLikelihood(model.likelihood, model)
             fit_gpytorch_model(mll)
             
-            ## log MLL
-        
         
     def step(self,model,objective_env):
-   
-        self.n_steps +=1            
+        
+        
+        
+        self.n_samples += self.n_eval
         
         # Theta_i is directly updated by gradient
         theta_i = self.theta_i
         
-        print(f'theta_i {self.theta_i}')
+        #print(f'theta_i {self.theta_i}')
     
         # Evaluate current parameters
         new_y,new_s,_ = objective_env(theta_i,self.n_eval)
-        self.trainer.log({"policy_return":new_y,"policy_return_at_grad":new_y})
+        
+        ### log the real policy return not noisy
+        j,_,_ = objective_env(theta_i,5)            
+        self.trainer.log(self.n_samples,{"policy_return":j,"policy_return_at_grad":j})
+        ###########################################
         
         model.append_train_data(theta_i,new_y, strict=False)
         model.set_module_data(new_y,new_s)
         self.kernel_states=new_s
         
+        targets = self.trainer.model.y_hist.squeeze().numpy()
+        self.trainer.log(self.n_samples,{"max_return":targets.max()})
         
         ## Adjust hyperparameters before info collection for better information estimate
         self.fit_model_hypers(model)
@@ -341,10 +356,10 @@ class GIBOptimizer(object):
 
     def print_grads(self):
         
-        print(f'grad_mean : max {self.mean_d.max()} /  min {self.mean_d.min()}')
+        print(f'grad_max : max {self.mean_d.max()} /  min {self.mean_d.min()}')
         print(f'grad_covar : max {self.variance_d.max()} /  min {self.variance_d.min()}')
         
-        self.trainer.log({
-            "avg_grad":self.mean_d.max(),
-            "max_covar":self.variance_d.max(),
+        self.trainer.log(self.n_samples,{
+            "max_grad(before hessian)":self.mean_d.max(),
+            "max_covar(before hessian)":self.variance_d.max(),
         })

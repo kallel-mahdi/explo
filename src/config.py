@@ -41,6 +41,8 @@ def get_env_configs(env_name):
                         "reward_shift":-1,
                         "env_name":"Hopper-v2",
                 }
+        
+    
 
                 env_appx_config = {
                         

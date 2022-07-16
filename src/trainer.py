@@ -9,14 +9,16 @@ class Trainer:
     def __init__(self,model,objective_env,optimizer,
                  n_steps,report_freq,
                  save_best=False,
-                 wandb_logger=False):
+                 wandb_logger=False,
+                 run_name=None,
+                 wandb_config=None):
         
         self.__dict__.update(locals())
         optimizer.trainer = self
         
         if wandb_logger:
+            wandb.init(project="explo",name=run_name,config=wandb_config) 
             
-            wandb.init(project="explo",name=None) 
             
     
     def save_bests(self):
@@ -80,7 +82,9 @@ class Trainer:
 
         return self.best_x,self.best_y
 
-    def log(self,dictionary):
+    def log(self,n_samples,dictionary):
+        
+        dictionary.update({"n_samples":n_samples})
         
         if self.wandb_logger :
             

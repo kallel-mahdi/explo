@@ -1,5 +1,0 @@
-theta_i tensor([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]])
-MyRBF received 2000 use_ard True
-acq_diff 0.0015662765363231301
-torch.Size([1, 2, 1000])
-torch.Size([1, 2, 1000])
