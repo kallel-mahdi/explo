@@ -13,7 +13,7 @@ from mushroom_rl.utils.spaces import Box, Discrete
 
 from src.approximators.actor import MLP, ActorNetwork
 from src.approximators.critic import CriticNetwork
-from src.approximators.utils import create_critic
+
 from src.ddpg import DDPG
 from src.environments.gym_env import Gym
 from src.environments.objective import EnvironmentObjective
@@ -147,7 +147,7 @@ def setup_mean(mean_config,agent):
     
     if mean_config["advantage"]==True:
         
-        mean_module  = AdvantageMean(agent._actor_approximator,agent._critic_approximator)
+        mean_module  = AdvantageMean(agent)
     
     else :
         
@@ -175,8 +175,9 @@ def setup_experiment(env_config,
             )
     
     train_x,train_y,train_s = get_initial_data(mlp,objective_env,n_init)
-    agent = setup_agent(objective_env)
     
+    
+    agent = setup_agent(objective_env)
     covar_module = setup_kernel(kernel_config,agent,train_s=train_s)
     mean_module = setup_mean(mean_config,agent)
     
@@ -187,18 +188,13 @@ def setup_experiment(env_config,
     # initialize likelihood and model
     model = DEGP(train_x=train_x,train_y=train_y,train_s=train_s,
                  mean_module = mean_module,covar_module = covar_module,
-                 likelihood=likelihood,mlp =mlp)
+                 likelihood=likelihood)
 
     if seed is not None :
         
         fix_seed(objective_env,seed)
     
     return model,objective_env
-
-
-
-
-
 
 
 def fix_seed(objective_env,seed):

@@ -9,7 +9,7 @@ class MyConstantMean(ConstantMean):
         super(MyConstantMean, self).__init__(*args,**kwargs)
     
     
-    def set_train_data(self,local_mean,**kwargs):
+    def set_train_data(self,local_mean,*args,**kwargs):
         
         self.constant.data = local_mean
         

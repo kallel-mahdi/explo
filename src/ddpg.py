@@ -66,7 +66,7 @@ class DDPG(DeepAC):
         
         
         self._actor_approximator = actor_params
-        self._target_actor_approximator = deepcopy(actor_params)
+        
 
         # target_actor_params = deepcopy(actor_params)
         # self._actor_approximator = Regressor(TorchApproximator,
@@ -76,12 +76,17 @@ class DDPG(DeepAC):
 
         self._init_target(self._critic_approximator,
                           self._target_critic_approximator)
+        
         # self._init_target(self._actor_approximator,
         #                   self._target_actor_approximator)
+        self._target_actor_approximator = deepcopy(actor_params)
+        
 
         policy = policy_class(self._actor_approximator, **policy_params)
 
-        policy_parameters = self._actor_approximator.model.network.parameters()
+        
+        #policy_parameters = self._actor_approximator.model.network.parameters()
+        policy_parameters = self._actor_approximator.parameters()
 
         self._add_save_attr(
             _critic_fit_params='pickle',
@@ -98,6 +103,7 @@ class DDPG(DeepAC):
         )
 
         super().__init__(mdp_info, policy, actor_optimizer, policy_parameters)
+        
 
     
     def _next_q(self, next_state, absorbing):

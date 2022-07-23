@@ -23,7 +23,6 @@ class MyGP(SingleTaskGP):
     
     def __init__(self, train_x, train_y,train_s,
                 mean_module,covar_module,likelihood,
-                mlp=None,
                 ):
         
         self.x_hist = train_x.clone()
@@ -196,10 +195,19 @@ class DEGP(MyGP):
     
         return -hessian.squeeze()
     
-    
-  
-    
-
+    def get_Mx_dx(self,theta_t):
+        
+        if  isinstance(self.mean_module,ConstantMean):
+            
+            return 0
+        
+        else : 
+        
+            mean = self.mean_module(theta_t)
+            Mx_dx =  torch.autograd.grad(mean,theta_t)
+            
+            return Mx_dx
+        
     def posterior_derivative(self,theta_t):
         """Computes the posterior of the derivative of the GP w.r.t. the given test
         points x.
@@ -219,9 +227,9 @@ class DEGP(MyGP):
         
         y_bar = self.mean_module(self.train_inputs[0])
         
-        Mx_dx = self.local_derivative(theta_t)
+        Mx_dx = self.get_Mx_dx(theta_t)
         
-        mean_d =    K_xX_dx @ KXX_inv @ (self.train_targets- y_bar ) - Mx_dx
+        mean_d =   - (Mx_dx - K_xX_dx @ KXX_inv @ (self.train_targets- y_bar )) 
         
         variance_d =  Kxx_dx2 - K_xX_dx @ KXX_inv @ K_xX_dx.transpose(1, 2)
                     

@@ -8,9 +8,9 @@ from gpytorch.kernels import RBFKernel, ScaleKernel
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger("ShapeLog."+__name__)
 
-# from gpytorch.settings import debug
+from gpytorch.settings import debug
 
-# debug._set_state(False) ##hotfix for GridKernel to inherit ScaleKernel
+debug._set_state(False) ##hotfix to allow input dim and ard_dim to have different dimensions
 
 class MyRBFKernel(ScaleKernel):
         
@@ -113,7 +113,7 @@ class RBFStateKernel(MyRBFKernel,StateKernel):
             
             StateKernel.__init__(self,**kwargs)
     
-        def build_kernel(self,ard_num_dims,use_ard,
+        def build_kernel(self,use_ard,
                          mlp,train_s,**kwargs):
             
             
