@@ -13,13 +13,13 @@ from mushroom_rl.utils.spaces import Box, Discrete
 
 from src.approximators.actor import MLP, ActorNetwork
 from src.approximators.critic import CriticNetwork
-
 from src.ddpg import DDPG
 from src.environments.gym_env import Gym
 from src.environments.objective import EnvironmentObjective
 from src.gp import DEGP, MyGP
 from src.kernels import *
 from src.means import *
+from src.optimizers.gibo import GIBOptimizer
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger("MathLog."+__name__)
@@ -50,7 +50,7 @@ def setup_policy(env,policy_config):
         n_actions = action_space.shape[0]
     else : raise ValueError("Unknown action space")
     
-    mlp = MLP([n_inputs]+policy_config["add_layer"]+[n_actions],add_bias=policy_config["add_bias"])
+    mlp = MLP(input_shape=None,output_shape=None,Ls=[n_inputs]+policy_config["add_layer"]+[n_actions],add_bias=policy_config["add_bias"])
     
     logger.warning(f'MLP dimensions : {[n_inputs] +policy_config["add_layer"] + [n_actions]}')
     
@@ -67,7 +67,7 @@ def setup_agent(objective_env):
     # Settings
     initial_replay_size = 500
     max_replay_size = 10000
-    batch_size = 200
+    batch_size = 5000
     n_features = 80
     tau = .001
 
@@ -78,12 +78,13 @@ def setup_agent(objective_env):
     policy_params = dict()
 
     actor_input_shape = mdp.info.observation_space.shape
-    # actor_params = dict(network=ActorNetwork,
-    #                     n_features=n_features,
-    #                     input_shape=actor_input_shape,
-    #                     output_shape=mdp.info.action_space.shape)
+    actor_params = dict(network=MLP,
+                        input_shape = (11,),
+                        output_shape=(3,),
+                        Ls=[11,3],
+                        add_bias=False)
 
-    actor_params = objective_env.mlp
+    #actor_params = objective_env.mlp
     
     ### Eventually replace this with GIBO
     
@@ -126,8 +127,9 @@ def setup_kernel(kernel_config,agent,train_s):
     ### Otherwise statekernel handles ard_num_dims dynamically
     
  
-    mlp = agent._actor_approximator
-    kernel_config["mlp"]= agent._actor_approximator
+    mlp = agent._actor_approximator.model.network
+    
+    kernel_config["mlp"]= mlp
     
     if kernel_name == "rbf":
         
@@ -159,7 +161,7 @@ def setup_mean(mean_config,agent):
 def setup_experiment(env_config,
                      mean_config,kernel_config,
                      likelihood_config,policy_config,
-                     seed=None):
+                     optimizer_config,seed=None):
     
     
     ### build environment and linear policy
@@ -189,12 +191,14 @@ def setup_experiment(env_config,
     model = DEGP(train_x=train_x,train_y=train_y,train_s=train_s,
                  mean_module = mean_module,covar_module = covar_module,
                  likelihood=likelihood)
+    
+    optimizer = GIBOptimizer(agent,model,**optimizer_config)
 
     if seed is not None :
         
         fix_seed(objective_env,seed)
     
-    return model,objective_env
+    return model,objective_env,optimizer
 
 
 def fix_seed(objective_env,seed):

@@ -26,16 +26,22 @@ class MLP(torch.nn.Module):
 
     def __init__(
                 self,
+                input_shape,output_shape,
                 Ls: List[int],
                 add_bias: bool = False,
                 nonlinearity: Optional[Callable] = None,
+                **kwargs
                 ):
         
         """Inits MLP with the provided weights 
         Note the MLP can support batches of weights """
         
         super(MLP, self).__init__()
+        
+        # if input_shape is not None:
+        #     Ls = [input_shape,output_shape]
             
+        
         weight_sizes  = [(in_size,out_size)
                                 for in_size, out_size in zip(Ls[:-1], Ls[1:])]
         n_layers = len(weight_sizes)
@@ -87,10 +93,14 @@ class MLP(torch.nn.Module):
         return weights,biases
         
         
-    def forward(self,params,states):
+    def forward(self,states,params=None):
         
         #logger.debug(f'params {params.shape} states {states.shape}')
         
+        if params is None :
+            
+            params = self.default_weights.data    
+            
         weights,biases = self.create_weights(params)
         outputs = states.T
         

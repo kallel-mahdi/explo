@@ -64,29 +64,34 @@ class DDPG(DeepAC):
         self._target_critic_approximator = Regressor(TorchApproximator,
                                                      **target_critic_params)
         
+        ############################################################
+        target_actor_params = deepcopy(actor_params)
+        self._actor_approximator = Regressor(TorchApproximator,
+                                             **actor_params)
+        self._target_actor_approximator = Regressor(TorchApproximator,
+                                                    **target_actor_params)
         
-        self._actor_approximator = actor_params
+        #self._actor_approximator = actor_params
         
-
-        # target_actor_params = deepcopy(actor_params)
-        # self._actor_approximator = Regressor(TorchApproximator,
-        #                                      **actor_params)
-        # self._target_actor_approximator = Regressor(TorchApproximator,
-        #                                             **target_actor_params)
+        ############################################################
 
         self._init_target(self._critic_approximator,
                           self._target_critic_approximator)
         
-        # self._init_target(self._actor_approximator,
-        #                   self._target_actor_approximator)
-        self._target_actor_approximator = deepcopy(actor_params)
+        
+        ############################################################
+        self._init_target(self._actor_approximator,
+                          self._target_actor_approximator)
+        #self._target_actor_approximator = deepcopy(actor_params)
+        ############################################################
         
 
         policy = policy_class(self._actor_approximator, **policy_params)
 
-        
-        #policy_parameters = self._actor_approximator.model.network.parameters()
-        policy_parameters = self._actor_approximator.parameters()
+        ############################################################
+        policy_parameters = self._actor_approximator.model.network.parameters()
+        #policy_parameters = self._actor_approximator.parameters()
+        ############################################################
 
         self._add_save_attr(
             _critic_fit_params='pickle',
@@ -117,32 +122,46 @@ class DDPG(DeepAC):
             Action-values returned by the critic for ``next_state`` and the
             action returned by the actor.
         """
-        with torch.no_grad():
         
-            a = self._target_actor_approximator.predict(next_state, **self._actor_predict_params)
+        with torch.no_grad():
+            
+            next_state = next_state.astype(np.float32)
+            a = self._target_actor_approximator.predict(next_state, **self._actor_predict_params).squeeze().T
             q = self._target_critic_approximator.predict(next_state, a, **self._critic_predict_params)
             q *= 1 - absorbing
 
             return q
 
-   
-    def fit_critic(self,transitions,n_epochs=2):
-        
-        self._replay_memory.add(transitions)
 
+    def fit_critic(self,n_epochs=2):
+        
+        
+        
+        
         state, action, reward, next_state, absorbing, _ =\
             self._replay_memory.get(self._batch_size())
 
         q_next = self._next_q(next_state, absorbing)
         q_target = reward + self.mdp_info.gamma * q_next
-
+        
+        
+        
+        self.state = state
+        self.action = action
+        self.q_target = q_target
+        self._critic_approximator.model.network.train()
         self._critic_approximator.fit(state, action, q_target,n_epochs=n_epochs,
                                         **self._critic_fit_params)
+        
+        
+        ### update target and critic
         
         self._update_target(self._critic_approximator,
                             self._target_critic_approximator)
         
-        
+        self._update_target(self._actor_approximator,
+                                self._target_actor_approximator)
+
         
         
     def fit(self, dataset):

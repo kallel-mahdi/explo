@@ -89,7 +89,8 @@ class StateKernel:
         
     def append_train_data(self,new_s):
         
-        self.set_train_data(new_s)
+        pass
+        
 
     def build_kernel(self,**kwargs):
         
@@ -101,7 +102,7 @@ class StateKernel:
  
     def run_parameters(self,params_batch,states):
         
-        actions = self.mlp(params_batch,states) ##[params_batch[:2],n_actions,n_states]    
+        actions = self.mlp(states,params_batch) ##[params_batch[:2],n_actions,n_states]    
         actions = torch.flatten(actions,start_dim=-2)##[params_batch[:2],n_actions*n_states]
         
         return actions
@@ -116,7 +117,7 @@ class RBFStateKernel(MyRBFKernel,StateKernel):
         def build_kernel(self,use_ard,
                          mlp,train_s,**kwargs):
             
-            
+    
             ard_num_dims  = train_s.shape[0] * mlp.n_actions
             MyRBFKernel.__init__(self,ard_num_dims,use_ard,**kwargs)
             

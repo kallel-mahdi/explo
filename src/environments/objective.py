@@ -95,7 +95,7 @@ class EnvironmentObjective(object):
                 
                 if torch.is_tensor(params):
                     ### list of parameters for BO
-                    action = self.mlp(params,state.unsqueeze(0)).squeeze()
+                    action = self.mlp(state.unsqueeze(0),params).squeeze()
                     #print("action shape",action.shape)
                 
                 else :

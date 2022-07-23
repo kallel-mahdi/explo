@@ -113,14 +113,15 @@ class GradientInformation(botorch.acquisition.AnalyticAcquisitionFunction):
 
 class GIBOptimizer(object):
         
-    def __init__(self,model,n_eval,
-                n_max,n_info_samples,
+    def __init__(self,agent,model,
+                n_eval,n_max,n_info_samples,
                 normalize_gradient,standard_deviation_scaling,
                 delta):
 
         gradInfo = GradientInformation(model)
-        theta_i = model.train_inputs[0][-1].reshape(1,-1)
-        params_history = [theta_i.clone()]
+        #theta_i = model.train_inputs[0][-1].reshape(1,-1)
+        theta_i = agent._actor_approximator.model.network.default_weights.data
+        params_history = [theta_i.clone().detach()]
         len_params = theta_i.shape[-1]
         optimizer_torch = torch.optim.SGD([theta_i], lr=0.5,weight_decay=1e-5)
         #optimizer_torch = torch.optim.Adam([theta_i], lr=0.1)
@@ -163,14 +164,15 @@ class GIBOptimizer(object):
 
             model.posterior(self.theta_i)  ## hotfix
             new_x,acq_value = self.sample_acqf(bounds)
-            new_y,new_s,_ = objective_env(new_x,1)
+            new_y,new_s,new_transitions = objective_env(new_x,1)
             
             ### log the real return (not noisy)
             j = new_y
             #j,_,_ = objective_env(new_x,5)
             self.trainer.log(self.n_samples,{"policy_return":j})
             ##############################
-            model.append_train_data(new_x,new_y, strict=False) ## right now we do not add new_s for info
+            model.append_train_data(new_x,new_y, strict=False) 
+            model.append_module_data(new_y,new_s,new_transitions)
             model.posterior(self.theta_i)  ## hotfix
             self.gradInfo.update_K_xX_dx()
 
@@ -210,7 +212,7 @@ class GIBOptimizer(object):
     def current_actions(self,params):
         
             kernel_states = self.model.covar_module.states
-            a = self.model.covar_module.mlp(params,kernel_states).flatten()
+            a = self.model.covar_module.mlp(kernel_states,params).flatten()
             return a
         
     def compute_inv_hessian(self,params):
@@ -248,7 +250,7 @@ class GIBOptimizer(object):
                 # lengthscale = model.covar_module.base_kernel.lengthscale.detach()
                 # params_grad = torch.nn.functional.normalize(params_grad) * lengthscale
                 
-                #params_grad = torch.nn.functional.normalize(params_grad)
+                params_grad = torch.nn.functional.normalize(params_grad)
                 inv_hessian = self.compute_inv_hessian(self.theta_i)
                 params_grad = (inv_hessian @ params_grad.T).T     
             
@@ -278,23 +280,22 @@ class GIBOptimizer(object):
     def step(self,model,objective_env):
         
         
-        
         self.n_samples += self.n_eval
         
         # Theta_i is directly updated by gradient
         theta_i = self.theta_i
     
         # Evaluate current parameters
-        new_y,new_s,_ = objective_env(theta_i,self.n_eval)
+        local_y,local_s,local_transitions = objective_env(theta_i,self.n_eval)
         
         ### log the real policy return not noisy
-        j = new_y
+        j = local_y
         #j,_,_ = objective_env(theta_i,5)            
         self.trainer.log(self.n_samples,{"policy_return":j,"policy_return_at_grad":j})
         ###########################################
         
-        model.append_train_data(theta_i,new_y, strict=False)
-        model.set_module_data(new_y,new_s)
+        model.append_train_data(theta_i,local_y, strict=False)
+        model.set_module_data(local_y,local_s,local_transitions)
         
         targets = self.trainer.model.y_hist.squeeze().numpy()
         self.trainer.log(self.n_samples,{"max_return":targets.max()})
@@ -314,8 +315,10 @@ class GIBOptimizer(object):
         self.one_gradient_step(model, theta_i)
 
         # Add new theta_i to history 
-        self.params_history.append(theta_i.clone())
+        self.params_history.append(theta_i.clone().detach())
         
+        
+        #print(f'agent actor params {self.agent._actor_approximator.model.network.default_weights.data}')
 
     def log_grads(self,mean_d,variance_d,params_grad,inv_hessian=None):
         

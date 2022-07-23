@@ -12,8 +12,10 @@ class MyConstantMean(ConstantMean):
     def set_train_data(self,local_mean,*args,**kwargs):
         
         self.constant.data = local_mean
+    
+    def append_train_data(self,new_mean,new_states,new_transitions):
+        pass
         
-
 class AdvantageMean(Mean):
     
     def __init__(self,agent):
@@ -24,41 +26,59 @@ class AdvantageMean(Mean):
         
         ## initialized later
         self.local_transitions = None
-        self.local_params = None
         self.local_states = None
+        self.agent = agent
+        #self.local_params = None (we directly use agent weights)
         
     
-    def set_train_data(self,local_mean,local_states,local_transitions,local_params):
+    def set_train_data(self,local_mean,local_states,local_transitions):
         
         self.constant.data = local_mean
-        self.local_params = local_params
         self.local_states = local_states
-        self._replay_memory.add(local_transitions)
+        self.agent._replay_memory.add(local_transitions)
+    
+    def append_train_data(self,new_mean,new_states,new_transitions):
         
-        
-    def update_train_data(self,transitions):
-        
-        
-        self._replay_memory.add(transitions)
+        self.agent._replay_memory.add(new_transitions)
     
     
     def fit_critic(self):
         
         self.agent.fit_critic()
-            
         
+            
         
     def __call__(self,params):
         
-        agent = self.critic_agent 
-        local_actions = self.agent._actor_approximator(self.local_params,self.local_states).squeeze().T
-        actions = self.agent._actor_approximator(params,self.local_states).squeeze().T
+        
+        with torch.no_grad():
+        
+            agent = self.agent
+            local_params = agent._actor_approximator.model.network.default_weights.data
+            local_actions = self.agent._actor_approximator(self.local_states,local_params).squeeze().T
+            actions = self.agent._actor_approximator(self.local_states,params).squeeze().T
+        
+            local_q = agent._critic_approximator(self.local_states, local_actions, output_tensor=True, **agent._critic_predict_params)
+            q = [agent._critic_approximator(self.local_states, a.T, output_tensor=True, **agent._critic_predict_params)
+                
+                for a in actions.T]
+            
+            q = torch.vstack(q)
+                        
+            return self.constant + torch.mean(q-local_q,axis=-1)
+            
+        
     
+    def call2(self,theta_t):
+     
+        agent = self.agent
+        actor = self.agent._actor_approximator.model.network
+        
+        """ Mushroom RL Call copies the parameters and breaks computation graph for grad"""
+        #local_actions = self.agent._actor_approximator(self.local_states,theta_t).squeeze().T
+        local_actions = actor(self.local_states,theta_t).squeeze().T
         local_q = agent._critic_approximator(self.local_states, local_actions, output_tensor=True, **agent._critic_predict_params)
-        q = agent._critic_approximator(self.local_states, actions, output_tensor=True, **agent._critic_predict_params)
         
-        mean = self.constant + torch.mean(q-local_q)
-        
-        return mean
+        return -torch.mean(local_q)
     
     
