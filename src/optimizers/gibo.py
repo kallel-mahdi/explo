@@ -104,7 +104,8 @@ class GradientInformation(botorch.acquisition.AnalyticAcquisitionFunction):
 
             # Compute_variance.
             variance_d = -K_xX_dx @ K_XX_inv @ K_xX_dx.transpose(1, 2)
-            variances.append(torch.trace(variance_d.view(D, D)).view(1))
+            variance_d = variance_d.squeeze()
+            variances.append(torch.trace(variance_d).view(1))
 
         return -torch.cat(variances, dim=0)
 
@@ -133,18 +134,6 @@ class GIBOptimizer(object):
         print(f' Gibo will use {self.n_max} last points to fit GP and {self.n_info_samples} info samples')
         
     
-    def sample_noise(self,theta_i,seed):
-        
-        noise = 1e-3 *torch.rand_like(self.theta_i) 
-        new_x1 = self.theta_i + noise
-        new_x2 = self.theta_i - noise
-        new_x  = torch.cat([new_x1,new_x2])
-        
-        print(f'Sample noise new_x {new_x.shape}')
-        
-        return new_x
-    
-    
     def sample_acqf(self,bounds):
         
         # Optimize acquistion function and get new observation.
@@ -152,8 +141,8 @@ class GIBOptimizer(object):
             acq_function=self.gradInfo,
             bounds=bounds,
             q=1,  # Analytic acquisition function.
-            num_restarts=5,
-            raw_samples=64,
+            num_restarts=10,
+            raw_samples=128,
             options={'nonnegative': True, 'batch_limit': 5},
             return_best_only=True,
             sequential=False)
@@ -164,29 +153,21 @@ class GIBOptimizer(object):
         
         
         acq_value_old = None
-    
+        n_info = 0
+        i = 0
         ## Optimize gradient information locally
         for i in range(self.n_info_samples):
             
             self.n_samples += 1
+            n_info += 1
 
             model.posterior(self.theta_i)  ## hotfix
-            
-            
-            # new_x1,new_x2 = self.sample_noise(self.theta_i,seed=i)
-            # new_y1,new_s1,_ = objective_env(new_x1,self.n_eval)
-            # new_y2,new_s2,_ = objective_env(new_x2,self.n_eval)
-            
-            # model.append_train_data(new_x1,new_y1, strict=False) ## right now we do not add new_s for info
-            # model.append_train_data(new_x2,new_y2, strict=False) ## right now we do not add new_s for info
-            # Update training points.
-            
-            
             new_x,acq_value = self.sample_acqf(bounds)
             new_y,new_s,_ = objective_env(new_x,1)
             
             ### log the real return (not noisy)
-            j,_,_ = objective_env(new_x,5)
+            j = new_y
+            #j,_,_ = objective_env(new_x,5)
             self.trainer.log(self.n_samples,{"policy_return":j})
             ##############################
             model.append_train_data(new_x,new_y, strict=False) ## right now we do not add new_s for info
@@ -195,28 +176,26 @@ class GIBOptimizer(object):
 
             if acq_value_old is not None:
                 
-                if (acq_value-acq_value_old) < 1e-2 and i>2:
+                if (acq_value-acq_value_old) < 1e-2 and n_info >     2:
                     
-                    print("acq_diff",acq_value-acq_value_old,"n_info",i)
-                    
-                    self.trainer.log(self.n_samples,{"n_info_points":i})
                     break                
             
                 self.trainer.log(self.n_samples,{"acq_diff":acq_value-acq_value_old})
             
-            self.trainer.log(self.n_samples,{"acq_value":acq_value})
+            
             self.log_sample_info(new_x)
-            
             acq_value_old = acq_value
-            
+        
+        self.trainer.log(self.n_samples,{"acq_value (after finish)":acq_value})
+        self.trainer.log(self.n_samples,{"n_info_points":n_info})
                               
-                    
     def log_sample_info(self,new_x):
         
-        theta_i,kernel_states = self.theta_i,self.kernel_states
+        theta_i = self.theta_i
         
-        a1 = self.model.covar_module.mlp(new_x,kernel_states).squeeze().T
-        a2 = self.model.covar_module.mlp(theta_i,kernel_states).squeeze().T
+        kernel_states = self.model.covar_module.states
+        a1 = self.model.covar_module.run_parameters(new_x,kernel_states).squeeze().T
+        a2 = self.model.covar_module.run_parameters(theta_i,kernel_states).squeeze().T
         
         param_distance_to_local = torch.linalg.norm(theta_i-new_x)
         action_distance_to_local = torch.linalg.norm(a1-a2)
@@ -229,25 +208,24 @@ class GIBOptimizer(object):
 
 
     def current_actions(self,params):
-            a = self.model.covar_module.mlp(params,self.kernel_states).flatten()
+        
+            kernel_states = self.model.covar_module.states
+            a = self.model.covar_module.mlp(params,kernel_states).flatten()
             return a
         
     def compute_inv_hessian(self,params):
         
-        n_ard_dims = self.kernel_states.shape[0]
-        grads = torch.autograd.functional.jacobian(self.current_actions,params).squeeze()
+        kernel_states = self.model.covar_module.states    
+        n_ard_dims = kernel_states.shape[0]
         lengthscales = self.model.covar_module.base_kernel.lengthscale.squeeze()
         
+            
+        
+        grads = torch.autograd.functional.jacobian(self.current_actions,params).squeeze()
         grads = ( (1/lengthscales) * grads.T).T
-        hessian = 0.5 *(1/n_ard_dims)*(grads.T @ grads)
+        hessian = (1/n_ard_dims)*(grads.T @ grads)
         n = hessian.shape[0]
         inv_hessian = torch.linalg.inv(hessian + 1e-1*torch.eye(n))
-        
-        
-        
-        #hessian = 0.5 * (1/n_states)*(grads.T @ grads)
-        # n = hessian.shape[0]
-        # inv_hessian = torch.linalg.inv(hessian + 1e-2*torch.eye(n))
         
         return inv_hessian
 
@@ -255,8 +233,8 @@ class GIBOptimizer(object):
     def one_gradient_step(self,model,theta_i):
         
         self.n_grad_steps +=1            
-        
-        print(f'model mean constant {model.mean_module.constant}')
+    
+        inv_hessian = None
         
         ## compute gradients manually
         with torch.no_grad():
@@ -265,34 +243,21 @@ class GIBOptimizer(object):
             mean_d, variance_d = model.posterior_derivative(theta_i)
             params_grad = -mean_d.view(1, self.len_params)
             
-            self.mean_d = mean_d
-            self.variance_d = variance_d    
-
             if self.normalize_gradient:
                 
                 # lengthscale = model.covar_module.base_kernel.lengthscale.detach()
                 # params_grad = torch.nn.functional.normalize(params_grad) * lengthscale
                 
-                params_grad = torch.nn.functional.normalize(params_grad)
+                #params_grad = torch.nn.functional.normalize(params_grad)
                 inv_hessian = self.compute_inv_hessian(self.theta_i)
-                params_grad = (inv_hessian @ params_grad.T).T
-                
-                self.trainer.log(self.n_samples,{
-                    "hessian_avg_eigvalue":torch.mean(torch.linalg.eigh(inv_hessian)[0]),
-                    "gradient_avg(abs)":torch.mean(torch.abs(params_grad))
-                })
-                
+                params_grad = (inv_hessian @ params_grad.T).T     
             
             # if self.standard_deviation_scaling:
             #     params_grad = params_grad / torch.diag(variance_d.view(self.len_params, self.len_params))
 
             theta_i.grad = params_grad  # set gradients
-            self.optimizer_torch.step()   
-            
-            self.trainer.log(self.n_samples,{
-                    "avg_grad":self.mean_d.max(),
-                    "max_covar":self.variance_d.max(),
-                })
+            self.optimizer_torch.step()  
+            self.log_grads(mean_d,variance_d,params_grad,inv_hessian) 
             
     
     def fit_model_hypers(self,model):
@@ -318,20 +283,18 @@ class GIBOptimizer(object):
         
         # Theta_i is directly updated by gradient
         theta_i = self.theta_i
-        
-        #print(f'theta_i {self.theta_i}')
     
         # Evaluate current parameters
         new_y,new_s,_ = objective_env(theta_i,self.n_eval)
         
         ### log the real policy return not noisy
-        j,_,_ = objective_env(theta_i,5)            
+        j = new_y
+        #j,_,_ = objective_env(theta_i,5)            
         self.trainer.log(self.n_samples,{"policy_return":j,"policy_return_at_grad":j})
         ###########################################
         
         model.append_train_data(theta_i,new_y, strict=False)
         model.set_module_data(new_y,new_s)
-        self.kernel_states=new_s
         
         targets = self.trainer.model.y_hist.squeeze().numpy()
         self.trainer.log(self.n_samples,{"max_return":targets.max()})
@@ -354,12 +317,30 @@ class GIBOptimizer(object):
         self.params_history.append(theta_i.clone())
         
 
-    def print_grads(self):
+    def log_grads(self,mean_d,variance_d,params_grad,inv_hessian=None):
         
-        print(f'grad_max : max {self.mean_d.max()} /  min {self.mean_d.min()}')
-        print(f'grad_covar : max {self.variance_d.max()} /  min {self.variance_d.min()}')
+        mean_d = torch.abs(mean_d)
+        variance_d = torch.abs(torch.diag(variance_d.squeeze()))
+        params_grad = torch.abs(params_grad)
+        variance_mean = variance_d / mean_d
         
-        self.trainer.log(self.n_samples,{
-            "max_grad(before hessian)":self.mean_d.max(),
-            "max_covar(before hessian)":self.variance_d.max(),
-        })
+        dct = {
+            "max_grad(before hessian)":mean_d.max(),
+            "mean_grad(before hessian)":mean_d.mean(),
+            "max_covar(before hessian)":variance_d.max(),
+            "max_var/mean": variance_mean.max(), 
+            }
+        
+    
+        if inv_hessian is not None:
+            
+            inv_hessian_eigvals = torch.linalg.eigh(inv_hessian)[0]
+            dct.update({
+                "inv_hessian_avg_eigvalue":torch.mean(inv_hessian_eigvals),
+                "max_grad(after hessian)":params_grad.max(),
+                "mean_grad(after hessian)":params_grad.mean(),
+            })
+            
+        self.trainer.log(self.n_samples,dct)
+        
+        

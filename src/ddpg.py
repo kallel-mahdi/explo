@@ -1,13 +1,12 @@
+from copy import deepcopy
+import torch
 import numpy as np
-
 from mushroom_rl.algorithms.actor_critic.deep_actor_critic import DeepAC
-from mushroom_rl.policy import Policy
 from mushroom_rl.approximators import Regressor
 from mushroom_rl.approximators.parametric import TorchApproximator
-from mushroom_rl.utils.replay_memory import ReplayMemory
+from mushroom_rl.policy import Policy
 from mushroom_rl.utils.parameters import Parameter, to_parameter
-
-from copy import deepcopy
+from mushroom_rl.utils.replay_memory import ReplayMemory
 
 
 class DDPG(DeepAC):
@@ -16,9 +15,11 @@ class DDPG(DeepAC):
     "Continuous Control with Deep Reinforcement Learning".
     Lillicrap T. P. et al.. 2016.
     """
-    def __init__(self, mdp_info, policy_class, policy_params,
-                 actor_params, actor_optimizer, critic_params, batch_size,
-                 initial_replay_size, max_replay_size, tau, policy_delay=1,
+    def __init__(self, mdp_info, 
+                 policy_class, policy_params,
+                 actor_params, actor_optimizer, 
+                 critic_params, 
+                 batch_size,initial_replay_size, max_replay_size, tau, policy_delay=1,
                  critic_fit_params=None, actor_predict_params=None, critic_predict_params=None):
         """
         Constructor.
@@ -62,17 +63,21 @@ class DDPG(DeepAC):
                                               **critic_params)
         self._target_critic_approximator = Regressor(TorchApproximator,
                                                      **target_critic_params)
+        
+        
+        self._actor_approximator = actor_params
+        self._target_actor_approximator = deepcopy(actor_params)
 
-        target_actor_params = deepcopy(actor_params)
-        self._actor_approximator = Regressor(TorchApproximator,
-                                             **actor_params)
-        self._target_actor_approximator = Regressor(TorchApproximator,
-                                                    **target_actor_params)
+        # target_actor_params = deepcopy(actor_params)
+        # self._actor_approximator = Regressor(TorchApproximator,
+        #                                      **actor_params)
+        # self._target_actor_approximator = Regressor(TorchApproximator,
+        #                                             **target_actor_params)
 
         self._init_target(self._critic_approximator,
                           self._target_critic_approximator)
-        self._init_target(self._actor_approximator,
-                          self._target_actor_approximator)
+        # self._init_target(self._actor_approximator,
+        #                   self._target_actor_approximator)
 
         policy = policy_class(self._actor_approximator, **policy_params)
 
@@ -94,26 +99,63 @@ class DDPG(DeepAC):
 
         super().__init__(mdp_info, policy, actor_optimizer, policy_parameters)
 
+    
+    def _next_q(self, next_state, absorbing):
+        """
+        Args:
+            next_state (np.ndarray): the states where next action has to be
+                evaluated;
+            absorbing (np.ndarray): the absorbing flag for the states in
+                ``next_state``.
+        Returns:
+            Action-values returned by the critic for ``next_state`` and the
+            action returned by the actor.
+        """
+        with torch.no_grad():
+        
+            a = self._target_actor_approximator.predict(next_state, **self._actor_predict_params)
+            q = self._target_critic_approximator.predict(next_state, a, **self._critic_predict_params)
+            q *= 1 - absorbing
+
+            return q
+
+   
+    def fit_critic(self,transitions,n_epochs=2):
+        
+        self._replay_memory.add(transitions)
+
+        state, action, reward, next_state, absorbing, _ =\
+            self._replay_memory.get(self._batch_size())
+
+        q_next = self._next_q(next_state, absorbing)
+        q_target = reward + self.mdp_info.gamma * q_next
+
+        self._critic_approximator.fit(state, action, q_target,n_epochs=n_epochs,
+                                        **self._critic_fit_params)
+        
+        self._update_target(self._critic_approximator,
+                            self._target_critic_approximator)
+        
+        
+        
+        
     def fit(self, dataset):
+            
         self._replay_memory.add(dataset)
+        
         if self._replay_memory.initialized:
             state, action, reward, next_state, absorbing, _ =\
                 self._replay_memory.get(self._batch_size())
 
             q_next = self._next_q(next_state, absorbing)
-            q_target = reward + self.mdp_info.gamma * q_next
+            q = reward + self.mdp_info.gamma * q_next
 
-            self._critic_approximator.fit(state, action, q_target,
+            self._critic_approximator.fit(state, action, q,
                                           **self._critic_fit_params)
 
-            
-            #################################################
-            ##### This will change for our actor gradient step
             if self._fit_count % self._policy_delay() == 0:
                 loss = self._loss(state)
                 self._optimize_actor_parameters(loss)
-            
-            #################################################
 
             self._update_target(self._critic_approximator,
                                 self._target_critic_approximator)
@@ -128,24 +170,8 @@ class DDPG(DeepAC):
 
         return -q.mean()
 
-    def _next_q(self, next_state, absorbing):
-        """
-        Args:
-            next_state (np.ndarray): the states where next action has to be
-                evaluated;
-            absorbing (np.ndarray): the absorbing flag for the states in
-                ``next_state``.
-        Returns:
-            Action-values returned by the critic for ``next_state`` and the
-            action returned by the actor.
-        """
-        a = self._target_actor_approximator.predict(next_state, **self._actor_predict_params)
-
-        q = self._target_critic_approximator.predict(next_state, a, **self._critic_predict_params)
-        q *= 1 - absorbing
-
-        return q
-
     def _post_load(self):
         self._actor_approximator = self.policy._approximator
         self._update_optimizer_parameters(self._actor_approximator.model.network.parameters())
+
+

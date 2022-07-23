@@ -27,9 +27,9 @@ class EnvironmentObjective(object):
         self,
         env: gym.Env,
         mlp: Callable,
+        manipulate_state,
         reward_scale = 1.0,
         reward_shift = 0.0,
-        manipulate_state=True,
         *arg,**kwargs
     ):
         """Inits the translation environment to objective."""
@@ -48,7 +48,6 @@ class EnvironmentObjective(object):
         self.timesteps = 0
         self.timesteps_to_reward = {}
         
-        self.state_normalizer = StateNormalizer()
         
         if manipulate_state == False:
             self.manipulate_state = lambda state: state
@@ -56,6 +55,8 @@ class EnvironmentObjective(object):
         elif manipulate_state == True:
             
             print(f'Using state normalization')
+            
+            self.state_normalizer = StateNormalizer()
             self.manipulate_state = lambda state: self.state_normalizer(state)
      
         
@@ -87,7 +88,7 @@ class EnvironmentObjective(object):
         for t in range(self.horizon):  # rollout
             
             
-            state = torch.Tensor(next_state)
+            state = torch.Tensor(self.manipulate_state(next_state))
             
             #### no need for grads here
             with torch.no_grad():
@@ -109,7 +110,8 @@ class EnvironmentObjective(object):
             last =  (t == (self.horizon-1)) or done
 
             
-            states.append(self.manipulate_state(state))
+            #states.append(self.manipulate_state(state))
+            states.append(state)
             actions.append(action.detach())
             rewards.append(torch.tensor(self.manipulate_reward(reward_tmp)))
             next_states.append(torch.tensor(next_state))

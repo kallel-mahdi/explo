@@ -8,6 +8,7 @@ log_file_path = path.join("/home/q123/Desktop/explo/logging.conf")
 logging.config.fileConfig(log_file_path)
 logger = logging.getLogger("ShapeLog."+__name__)
 
+from collections import OrderedDict
 from copy import deepcopy
 from itertools import chain
 from typing import Callable, List, Optional, Tuple, Union
@@ -51,9 +52,11 @@ class MLP(torch.nn.Module):
         if nonlinearity is None:
             #nonlinearity = torch.nn.ReLU()
             nonlinearity = torch.nn.Identity()
-            
+        
         
         self.__dict__.update(locals())
+        
+        self.register_parameter("default_weights",nn.Parameter(torch.zeros((1,self.len_params)))) ## maybe add device later
         
     def create_weights(self,params):
         
@@ -106,27 +109,52 @@ class MLP(torch.nn.Module):
         logger.debug(f'MLP : actions {outputs.shape}')
         return outputs
     
+    def predict(self,states,*args,**kwargs):
+        
+        return self.forward(self.default_weights,states)
 
 class ActorNetwork(nn.Module):
     
-    def __init__(self, input_shape, output_shape, n_features, **kwargs):
+    def __init__(self, 
+                Ls: List[int],
+                add_bias: bool = False, 
+                nonlinearity = None,
+                **kwargs,
+                ):
         super(ActorNetwork, self).__init__()
 
-        n_input = input_shape[-1]
-        n_output = output_shape[0]
+        self.weight_sizes  = [(in_size,out_size)
+                                for in_size, out_size in zip(Ls[:-1], Ls[1:])]
         
-        #self.dummy_param = nn.Parameter(torch.empty(0))
+        self.n_layers = len(self.weight_sizes)
+        
+        self.len_params = sum(
+            [
+                (in_size + 1 * add_bias) * out_size
+                for in_size, out_size in zip(Ls[:-1], Ls[1:])
+            ]
+        )
+        
+        self.n_actions = Ls[-1]
+        
+        self.nonlinearity = torch.nn.Identity()  if nonlinearity is None else nonlinearity
+        
+        self.add_bias = add_bias
+        
+        self.layers = self.build_layers()
+           
+    
+    def build_layers(self):
+        
+        dct = OrderedDict(
+                            ('layer'+str(i),nn.Linear(sizes[0],sizes[1],bias=self.add_bias))
+                            for i,sizes in enumerate(self.weight_sizes)                           
+                        )
+        
+        layers = nn.Sequential(dct)   
+        
+        return layers    
 
-        self._h1 = nn.Linear(n_input, n_features)
-        self._h2 = nn.Linear(n_features, n_features)
-        self._h3 = nn.Linear(n_features, n_output)
-
-        nn.init.xavier_uniform_(self._h1.weight,
-                                gain=nn.init.calculate_gain('relu'))
-        nn.init.xavier_uniform_(self._h2.weight,
-                                gain=nn.init.calculate_gain('relu'))
-        nn.init.xavier_uniform_(self._h3.weight,
-                                gain=nn.init.calculate_gain('linear'))
     
     @property
     def n_params(self):
@@ -142,35 +170,61 @@ class ActorNetwork(nn.Module):
     def device(self):
         device = next(self.parameters()).device
         return device
+    
+    def get_params(self):
+        
+        vector_params = []
+        
+        for p in self.parameters():
             
-
+            vector_params.append(p.data.flatten())
+        
+        return torch.cat(vector_params)
+    
+    def set_params(self,new_params):
+        
+        with torch.no_grad():
+            
+            idx = 0
+            for param in self.parameters():
+                    weights = param.data
+                    weights_shape = torch.tensor(weights.shape)
+                    n_steps = torch.prod(weights_shape,0)
+                    new_param = new_params[idx:idx+n_steps].reshape(*weights_shape)
+                    param.data = new_param
+                    idx += n_steps
+                
+        
     def add_noise(self,noise):
+        
         
         with torch.no_grad():
             
             if not torch.is_tensor(noise):        
                 noise = torch.tensor(noise,device=self.device)
             
-            idx = 0
-            for param in self.parameters():
-                weights = param.data
-                weights_shape = torch.tensor(weights.shape)
-                n_steps = torch.prod(weights_shape,0)
-                noise_param = noise[idx:idx+n_steps].reshape(*weights_shape)
-                param.data += noise_param
-                idx += n_steps
-
-    def forward(self, state):
-        features1 = F.relu(self._h1(torch.squeeze(state, 1).float()))
-        features2 = F.relu(self._h2(features1))
-        a = self._h3(features2)
-
+            self.set_params(self.get_params()+noise)
+            
+        
+    def forward(self, states):
+        
+        outputs = states
+        
+        for i,layer in enumerate(self.layers):
+            
+            outputs = layer(outputs)
+            
+            if (i+1) < (self.n_layers) :
+                
+                outputs = self.nonlinearity(outputs)
+            
+        return outputs
+    
+    def super_forward(self,params,states):
+        
+        self.set_params(params)
+        a = self(states)
+        
         return a
     
     
-if __name__ == '__main__':
-    
-    mlp = MLP([4,2],add_bias=True)
-    params = torch.rand(10,mlp.len_params)
-    states = torch.rand(1000,4)
-    mlp(params,states).size()

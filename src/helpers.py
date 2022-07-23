@@ -5,13 +5,21 @@ import random
 import gpytorch
 import numpy as np
 import torch
+from mushroom_rl.approximators import Regressor
+from mushroom_rl.approximators.parametric import TorchApproximator
+from mushroom_rl.policy import DeterministicPolicy
+from mushroom_rl.utils.replay_memory import ReplayMemory
 from mushroom_rl.utils.spaces import Box, Discrete
 
-from src.approximators.actor import MLP
+from src.approximators.actor import MLP, ActorNetwork
+from src.approximators.critic import CriticNetwork
+from src.approximators.utils import create_critic
+from src.ddpg import DDPG
 from src.environments.gym_env import Gym
 from src.environments.objective import EnvironmentObjective
 from src.gp import DEGP, MyGP
 from src.kernels import *
+from src.means import *
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger("MathLog."+__name__)
@@ -48,41 +56,109 @@ def setup_policy(env,policy_config):
     
     return mlp
 
-def setup_kernel(kernel_config,mlp,train_s):
+def setup_agent(objective_env):
+    
+    # MDP
+    horizon = 500
+    gamma = 0.99
+    gamma_eval = 1.
+
+
+    # Settings
+    initial_replay_size = 500
+    max_replay_size = 10000
+    batch_size = 200
+    n_features = 80
+    tau = .001
+
+
+    mdp = objective_env.env
+
+    policy_class = DeterministicPolicy
+    policy_params = dict()
+
+    actor_input_shape = mdp.info.observation_space.shape
+    # actor_params = dict(network=ActorNetwork,
+    #                     n_features=n_features,
+    #                     input_shape=actor_input_shape,
+    #                     output_shape=mdp.info.action_space.shape)
+
+    actor_params = objective_env.mlp
+    
+    ### Eventually replace this with GIBO
+    
+    actor_optimizer = {
+                        'class': torch.optim.Adam,
+                        'params': {'lr': 1e-4}
+                        }
+
+    #####################################
+
+    critic_input_shape = (actor_input_shape[0] + mdp.info.action_space.shape[0],)
+
+
+    critic_params = dict(network=CriticNetwork,
+                        optimizer={'class': torch.optim.Adam,
+                                    'params': {'lr': 1e-3}},
+                        loss=torch.nn.functional.mse_loss,
+                        n_features=n_features,
+                        input_shape=critic_input_shape,
+                        output_shape=(1,))
+
+
+    agent = DDPG(mdp.info, policy_class,policy_params,
+                actor_params, actor_optimizer, 
+                critic_params,
+                batch_size, initial_replay_size, max_replay_size,
+                tau)
+    
+    return agent
+
+
+
+
+
+def setup_kernel(kernel_config,agent,train_s):
     
     kernel_name = kernel_config.pop("kernel_name")
     
     ### If not using a statekernel: ard_num_dims = num_parameters
     ### Otherwise statekernel handles ard_num_dims dynamically
     
+ 
+    mlp = agent._actor_approximator
+    kernel_config["mlp"]= agent._actor_approximator
+    
     if kernel_name == "rbf":
         
         kernel_config["ard_num_dims"]=mlp.len_params
         print(f'Using ard_num_dims = {mlp.len_params}')
+        kernel = MyRBFKernel(**kernel_config)
         
-    if kernel_name == "rbf":
-        
-        kernel = MyRBFKernel(**kernel_config,mlp=mlp)
-    
-    elif kernel_name == "linearstate":
-            
-        kernel = LinearStateKernel(**kernel_config,mlp=mlp,train_s=train_s)
-    
     elif kernel_name == "rbfstate":
         
-        kernel = RBFStateKernel(**kernel_config,mlp=mlp,train_s=train_s)
-        
-    elif kernel_name == "maternstate":
-            
-        kernel = MaternStateKernel(**kernel_config,mlp=mlp,train_s=train_s)
-    
+        kernel = RBFStateKernel(**kernel_config,train_s=train_s)
+
     else : raise ValueError("Unknown kernel")
     
     return kernel
 
+def setup_mean(mean_config,agent):
+    
+    if mean_config["advantage"]==True:
+        
+        mean_module  = AdvantageMean(agent._actor_approximator,agent._critic_approximator)
+    
+    else :
+        
+        mean_module = MyConstantMean()
+        
+    
+    return mean_module
     
 def setup_experiment(env_config,
-                     kernel_config,likelihood_config,policy_config,
+                     mean_config,kernel_config,
+                     likelihood_config,policy_config,
                      seed=None):
     
     
@@ -99,21 +175,29 @@ def setup_experiment(env_config,
             )
     
     train_x,train_y,train_s = get_initial_data(mlp,objective_env,n_init)
-    kernel = setup_kernel(kernel_config,mlp=mlp,train_s=train_s)
+    agent = setup_agent(objective_env)
+    
+    covar_module = setup_kernel(kernel_config,agent,train_s=train_s)
+    mean_module = setup_mean(mean_config,agent)
+    
     likelihood = gpytorch.likelihoods.GaussianLikelihood(
             **likelihood_config
         )
     
     # initialize likelihood and model
     model = DEGP(train_x=train_x,train_y=train_y,train_s=train_s,
-                 kernel = kernel,likelihood=likelihood,
-                 mlp =mlp)
-    
+                 mean_module = mean_module,covar_module = covar_module,
+                 likelihood=likelihood,mlp =mlp)
+
     if seed is not None :
         
         fix_seed(objective_env,seed)
     
     return model,objective_env
+
+
+
+
 
 
 

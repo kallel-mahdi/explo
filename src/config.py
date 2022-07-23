@@ -50,6 +50,23 @@ def get_env_configs(env_name):
                         "n_info": 8,
                         
                 }
+        
+        elif env_name == "Walker2d-v3":
+    
+                env_config = {
+                        "n_init" : 1,
+                        "reward_scale":1000, 
+                        "reward_shift":-1,
+                        "env_name":"Walker2d-v3",
+                }
+        
+
+                env_appx_config = {
+                        
+                        "n_max":48,      
+                        "n_info": 8,
+                        
+                }
 
 
         else : raiseValueError("Unknown environment")
@@ -86,6 +103,10 @@ def get_configs(env_name,kernel_name):
                 "outputscale_constraint":gpytorch.constraints.constraints.GreaterThan(0.01),
                 "outputscale_hyperprior":gpytorch.priors.torch_priors.NormalPrior(loc=2.0,scale=1.0),
                 }
+        
+        mean_config = {
+                "advantage":True,
+        }
 
 
         trainer_config = {
@@ -105,4 +126,4 @@ def get_configs(env_name,kernel_name):
                 "standard_deviation_scaling":False,
         }
 
-        return env_config,likelihood_config,kernel_config,optimizer_config,trainer_config
+        return env_config,likelihood_config,kernel_config,mean_config,optimizer_config,trainer_config

@@ -22,7 +22,7 @@ class MyGP(SingleTaskGP):
     _num_outputs = 1
     
     def __init__(self, train_x, train_y,train_s,
-                kernel,likelihood,
+                mean_module,covar_module,likelihood,
                 mlp=None,
                 ):
         
@@ -39,8 +39,8 @@ class MyGP(SingleTaskGP):
         super().__init__(train_X = train_x, 
                          train_Y= train_y.reshape(-1,1),
                         likelihood= likelihood,
-                        mean_module =MyConstantMean(), ## prior mean = 0
-                        covar_module = kernel,
+                        mean_module =mean_module, ## prior mean = 0
+                        covar_module = covar_module,
                         #### NEWW NORMALIZATION
                         # outcome_transform=Standardize(m=train_y.shape[-1]),
                         # input_transform=InputStandardize(d=train_x.shape[-1])
@@ -48,17 +48,15 @@ class MyGP(SingleTaskGP):
 
         self.N = train_x.shape[0]
         self.D = train_x.shape[1] 
-        self.mlp = mlp
-    
-    
-    
+
+
     def set_module_data(self,mean,states):
         
         if  isinstance(self.covar_module,StateKernel):
             
             self.mean_module.set_train_data(mean,states)
             
-            self.covar_module.set_train_data(states,self.mlp)
+            self.covar_module.set_train_data(states)
             
     
     def set_train_data(self,train_x,train_y,train_s=None,strict=False):
@@ -87,7 +85,7 @@ class MyGP(SingleTaskGP):
         
         ### update state kernels with new states
         if isinstance(self.covar_module,StateKernel) and not(new_s is None):
-            self.covar_module.append_train_data(new_s,self.mlp)
+            self.covar_module.append_train_data(new_s)
     
 
     def forward(self, x):
@@ -198,6 +196,9 @@ class DEGP(MyGP):
     
         return -hessian.squeeze()
     
+    
+  
+    
 
     def posterior_derivative(self,theta_t):
         """Computes the posterior of the derivative of the GP w.r.t. the given test
@@ -217,12 +218,14 @@ class DEGP(MyGP):
         KXX_inv = self.get_KXX_inv()
         
         y_bar = self.mean_module(self.train_inputs[0])
-        mean_d = K_xX_dx @ KXX_inv @ (self.train_targets- y_bar )
+        
+        Mx_dx = self.local_derivative(theta_t)
+        
+        mean_d =    K_xX_dx @ KXX_inv @ (self.train_targets- y_bar ) - Mx_dx
         
         variance_d =  Kxx_dx2 - K_xX_dx @ KXX_inv @ K_xX_dx.transpose(1, 2)
                     
-        variance_d = variance_d.clamp_min(1e-9)
+        #variance_d = variance_d.clamp_min(1e-9)
 
         return mean_d, variance_d
             
-

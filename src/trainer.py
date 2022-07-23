@@ -53,13 +53,18 @@ class Trainer:
         
         report_freq = self.report_freq
         optimizer,model = self.optimizer,self.model
-        objective_env = self.objective_env  
+        objective_env = self.objective_env 
         
-        for i in range(self.n_steps):
+        
+        
+        while optimizer.n_samples < self.n_steps :
+            
+            
             
             optimizer.step(model,objective_env)
             
-            if (i % report_freq) == 0 and i>=report_freq:
+            
+            if (optimizer.n_grad_steps % report_freq) == 0 and optimizer.n_grad_steps>0 :
 
                 max = model.y_hist.max()
                 curr = model.y_hist[-1]
@@ -71,7 +76,6 @@ class Trainer:
                 print(f'current {curr} / max {max} /batch_mean {batch_mean} /batch_max {batch_max} ')
                 model.print_hypers()
                 model.print_train_mll()
-                optimizer.print_grads()
     
         self.best_x,self.best_y = model.get_best_params()
         
