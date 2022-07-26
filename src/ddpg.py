@@ -71,7 +71,6 @@ class DDPG(DeepAC):
         self._target_actor_approximator = Regressor(TorchApproximator,
                                                     **target_actor_params)
         
-        #self._actor_approximator = actor_params
         
         ############################################################
 
@@ -82,7 +81,7 @@ class DDPG(DeepAC):
         ############################################################
         self._init_target(self._actor_approximator,
                           self._target_actor_approximator)
-        #self._target_actor_approximator = deepcopy(actor_params)
+    
         ############################################################
         
 
@@ -90,7 +89,7 @@ class DDPG(DeepAC):
 
         ############################################################
         policy_parameters = self._actor_approximator.model.network.parameters()
-        #policy_parameters = self._actor_approximator.parameters()
+    
         ############################################################
 
         self._add_save_attr(
@@ -133,7 +132,7 @@ class DDPG(DeepAC):
             return q
 
 
-    def fit_critic(self,n_epochs=2):
+    def fit_critic(self,n_epochs=10):
         
         
         

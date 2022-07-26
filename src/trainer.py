@@ -15,6 +15,7 @@ class Trainer:
         
         self.__dict__.update(locals())
         optimizer.trainer = self
+        model.trainer = self
         
         if wandb_logger:
             wandb.init(project="explo",name=run_name,config=wandb_config) 
@@ -34,21 +35,7 @@ class Trainer:
             
         print(f'Saved best weights to {ckpt_path}')
         
-    
-    def plot_cummulative_regret(self):
-        
-        model = self.model    
-        targets = model.y_hist.squeeze().numpy()
-        n_trials = targets.shape[0]
-        best_performance=np.zeros(n_trials)
-
-        for i in range(1,n_trials):
-
-            best_performance[i] = targets[:i].max()
-
-        plt.plot(best_performance)
-                
-
+ 
     def run(self):
         
         report_freq = self.report_freq
@@ -74,12 +61,10 @@ class Trainer:
                 batch_max  = last_batch.max()
                 
                 print(f'current {curr} / max {max} /batch_mean {batch_mean} /batch_max {batch_max} ')
-                model.print_hypers()
                 model.print_train_mll()
     
         self.best_x,self.best_y = model.get_best_params()
         
-        self.plot_cummulative_regret()
         
         if self.save_best : self.save_bests()
         
@@ -88,6 +73,8 @@ class Trainer:
 
     def log(self,n_samples,dictionary):
         
+        
+            
         dictionary.update({"n_samples":n_samples})
         
         if self.wandb_logger :

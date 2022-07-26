@@ -66,10 +66,10 @@ def setup_agent(objective_env):
 
     # Settings
     initial_replay_size = 500
-    max_replay_size = 10000
-    batch_size = 5000
+    max_replay_size = 32000
+    batch_size = 32000
     n_features = 80
-    tau = .001
+    tau = .99
 
 
     mdp = objective_env.env
@@ -78,10 +78,12 @@ def setup_agent(objective_env):
     policy_params = dict()
 
     actor_input_shape = mdp.info.observation_space.shape
+    actor_output_shape = mdp.info.action_space.shape
+    
     actor_params = dict(network=MLP,
-                        input_shape = (11,),
-                        output_shape=(3,),
-                        Ls=[11,3],
+                        input_shape = actor_input_shape,
+                        output_shape=actor_output_shape,
+                        Ls=[actor_input_shape[0],actor_output_shape[0]],
                         add_bias=False)
 
     #actor_params = objective_env.mlp
@@ -95,7 +97,7 @@ def setup_agent(objective_env):
 
     #####################################
 
-    critic_input_shape = (actor_input_shape[0] + mdp.info.action_space.shape[0],)
+    critic_input_shape = (actor_input_shape[0] + actor_output_shape[0],)
 
 
     critic_params = dict(network=CriticNetwork,
@@ -114,7 +116,6 @@ def setup_agent(objective_env):
                 tau)
     
     return agent
-
 
 
 
@@ -210,7 +211,6 @@ def fix_seed(objective_env,seed):
     torch.manual_seed(seed)
     torch.random.manual_seed(seed)
     objective_env.env.seed(seed)
-    #objective_env.env.action_space.seed(seed)
     
     
 

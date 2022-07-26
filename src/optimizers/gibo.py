@@ -178,7 +178,7 @@ class GIBOptimizer(object):
 
             if acq_value_old is not None:
                 
-                if (acq_value-acq_value_old) < 1e-2 and n_info >     2:
+                if (acq_value-acq_value_old) < 1e-2 and n_info > 2:
                     
                     break                
             
@@ -243,7 +243,7 @@ class GIBOptimizer(object):
           
             self.optimizer_torch.zero_grad()
             mean_d, variance_d = model.posterior_derivative(theta_i)
-            params_grad = -mean_d.view(1, self.len_params)
+            params_grad = mean_d.view(1, self.len_params)
             
             if self.normalize_gradient:
                 
@@ -257,9 +257,10 @@ class GIBOptimizer(object):
             # if self.standard_deviation_scaling:
             #     params_grad = params_grad / torch.diag(variance_d.view(self.len_params, self.len_params))
 
-            theta_i.grad = params_grad  # set gradients
+            theta_i.grad = -params_grad  # set gradients
             self.optimizer_torch.step()  
             self.log_grads(mean_d,variance_d,params_grad,inv_hessian) 
+            self.model.log_hypers(self.n_samples)
             
     
     def fit_model_hypers(self,model):
@@ -300,9 +301,6 @@ class GIBOptimizer(object):
         targets = self.trainer.model.y_hist.squeeze().numpy()
         self.trainer.log(self.n_samples,{"max_return":targets.max()})
         
-        ## Adjust hyperparameters before info collection for better information estimate
-        self.fit_model_hypers(model)
-    
         # Sample locally to optimize gradient information
         self.gradInfo.update_theta_i(theta_i) ## this also update KxX_dx
         bounds = torch.tensor([[-self.delta], [self.delta]]) + theta_i

@@ -115,30 +115,21 @@ class MyGP(SingleTaskGP):
         best_y = self.y_hist[argmax]
         return best_x,best_y
   
-    def print_hypers(self):
+    def log_hypers(self,n_samples,):
         
         
-        if isinstance(self.covar_module,MyRBFKernel):
-                
-            print("##############################")
-            print(f'covar_lengthscale max {self.covar_module.base_kernel.lengthscale.max()} \
-                    min {self.covar_module.base_kernel.lengthscale.min()}  \
-                    mean{self.covar_module.base_kernel.lengthscale.mean()} \
-                    covar_outputscale {self.covar_module.outputscale.item()} \
-                    noise {self.likelihood.noise_covar.noise.item()}')
-            print("##############################")
-        
-        elif isinstance(self.covar_module,LinearStateKernel):
-        
-            print("##############################")
-            print(f'linear model covar_lengthscale max {self.covar_module.lengthscales.max()} / min {self.covar_module.lengthscales.min()}')                  
-            print(f'variance  {self.covar_module.variance}')
-            print(f'noise {self.likelihood.noise_covar.noise.item()}')
-            print("##############################")
+        dct = {
             
+            "covar_lengthscale mean": self.covar_module.base_kernel.lengthscale.mean(),
+            "covar_lengthscale std": self.covar_module.base_kernel.lengthscale.std(),
+            "covar_output_scale" : self.covar_module.outputscale.item(),
+            "noise": self.likelihood.noise_covar.noise.item(),    
+            "Mean MAE" :self.mean_error,
+        }
         
-        #print("last parameters",self.x_hist[-1])
-    
+        self.trainer.log(n_samples,dct)
+        
+        
     def print_train_mll(self):
         
         self.posterior(self.train_inputs[0][-1].reshape(1,-1))  ## hotfix
@@ -246,16 +237,19 @@ class DEGP(MyGP):
                 self.mean_module.fit_critic()
                 
             
-        y_bar = self.mean_module(self.train_inputs[0])
+        M_x = self.mean_module(self.train_inputs[0])
         
         with torch.enable_grad():
             Mx_dx = self.get_Mx_dx(theta_t)
         
-        mean_d =   - (Mx_dx - K_xX_dx @ KXX_inv @ (self.train_targets- y_bar )) 
+        mean_d =   Mx_dx + K_xX_dx @ KXX_inv @ (self.train_targets- M_x)
         
         variance_d =  Kxx_dx2 - K_xX_dx @ KXX_inv @ K_xX_dx.transpose(1, 2)
                     
         #variance_d = variance_d.clamp_min(1e-9)
+        
+        self.mean_error = torch.mean(torch.abs(self.train_targets- M_x))
 
         return mean_d, variance_d
             
+ 

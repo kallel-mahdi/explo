@@ -33,8 +33,10 @@ class AdvantageMean(Mean):
     
     def set_train_data(self,local_mean,local_states,local_transitions):
         
+        
         self.constant.data = local_mean
         self.local_states = local_states
+        self.local_transitions = local_transitions
         self.agent._replay_memory.add(local_transitions)
     
     def append_train_data(self,new_mean,new_states,new_transitions):
@@ -44,10 +46,11 @@ class AdvantageMean(Mean):
     
     def fit_critic(self):
         
+        ## add local transitions again just in case
+        self.agent._replay_memory.add(self.local_transitions)
         self.agent.fit_critic()
         
             
-        
     def __call__(self,params):
         
         
@@ -77,8 +80,9 @@ class AdvantageMean(Mean):
         """ Mushroom RL Call copies the parameters and breaks computation graph for grad"""
         #local_actions = self.agent._actor_approximator(self.local_states,theta_t).squeeze().T
         local_actions = actor(self.local_states,theta_t).squeeze().T
-        local_q = agent._critic_approximator(self.local_states, local_actions, output_tensor=True, **agent._critic_predict_params)
+        #local_q = agent._critic_approximator(self.local_states, local_actions, output_tensor=True, **agent._critic_predict_params)
+        local_q = agent._target_critic_approximator(self.local_states, local_actions, output_tensor=True, **agent._critic_predict_params)
         
-        return -torch.mean(local_q)
+        return torch.mean(local_q)
     
     

@@ -11,3 +11,4 @@ sklearn
 gym
 mujoco-py
 mujoco
+wandb
