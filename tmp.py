@@ -102,7 +102,7 @@ if __name__ == '__main__':
         torch.set_num_threads(1)
         np.random.seed(42)
 
-        n = 25
+        n = 30
         seeds = np.random.randint(low=0,high=2**30,size=(n,))
         seeds = [ int(i) for i in seeds]
 

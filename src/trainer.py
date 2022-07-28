@@ -78,10 +78,12 @@ class Trainer:
         
             
         dictionary.update({"n_samples":n_samples})
+
+        commit = "policy_return" in dictionary.keys()
         
         if self.wandb_logger :
             
-            wandb.log(dictionary)
+            wandb.log(dictionary,commit=commit)
                 
 
 
