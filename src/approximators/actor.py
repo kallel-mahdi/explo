@@ -4,8 +4,8 @@
 import logging
 from os import path
 
-log_file_path = path.join("/home/q123/Desktop/explo/logging.conf")
-logging.config.fileConfig(log_file_path)
+# log_file_path = path.join("/home/q123/Desktop/explo/logging.conf")
+# logging.config.fileConfig(log_file_path)
 logger = logging.getLogger("ShapeLog."+__name__)
 
 from collections import OrderedDict

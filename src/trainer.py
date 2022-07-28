@@ -10,6 +10,7 @@ class Trainer:
                  n_steps,report_freq,
                  save_best=False,
                  wandb_logger=False,
+                 project_name = None,
                  run_name=None,
                  wandb_config=None):
         
@@ -18,9 +19,12 @@ class Trainer:
         model.trainer = self
         
         if wandb_logger:
-            wandb.init(project="explo",name=run_name,config=wandb_config) 
+            wandb.init(project=project_name,name=run_name,config=wandb_config) 
+            # import os
+            # os.environ["WANDB_START_METHOD"] = "thread"
+
             
-            
+        
     
     def save_bests(self):
 
@@ -59,8 +63,6 @@ class Trainer:
                 last_batch= model.train_targets[-report_freq:]
                 batch_mean = last_batch.mean()
                 batch_max  = last_batch.max()
-                
-                print(f'current {curr} / max {max} /batch_mean {batch_mean} /batch_max {batch_max} ')
                 model.print_train_mll()
     
         self.best_x,self.best_y = model.get_best_params()

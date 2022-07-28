@@ -119,12 +119,11 @@ class GIBOptimizer(object):
                 delta):
 
         gradInfo = GradientInformation(model)
-        #theta_i = model.train_inputs[0][-1].reshape(1,-1)
         theta_i = agent._actor_approximator.model.network.default_weights.data
         params_history = [theta_i.clone().detach()]
         len_params = theta_i.shape[-1]
         optimizer_torch = torch.optim.SGD([theta_i], lr=0.5,weight_decay=1e-5)
-        #optimizer_torch = torch.optim.Adam([theta_i], lr=0.1)
+
         
         self.__dict__.update(locals())
         
@@ -178,18 +177,19 @@ class GIBOptimizer(object):
 
             if acq_value_old is not None:
                 
-                if (acq_value-acq_value_old) < 1e-2 and n_info > 2:
+                #if (acq_value-acq_value_old) < 1e-2 and n_info > 2:
+                if (acq_value-acq_value_old) < 1e-2:
                     
                     break                
             
-                self.trainer.log(self.n_samples,{"acq_diff":acq_value-acq_value_old})
+                #self.trainer.log(self.n_samples,{"acq_diff":acq_value-acq_value_old})
             
             
-            self.log_sample_info(new_x)
+            #self.log_sample_info(new_x)
             acq_value_old = acq_value
         
-        self.trainer.log(self.n_samples,{"acq_value (after finish)":acq_value})
-        self.trainer.log(self.n_samples,{"n_info_points":n_info})
+        #self.trainer.log(self.n_samples,{"acq_value (after finish)":acq_value})
+        #self.trainer.log(self.n_samples,{"n_info_points":n_info})
                               
     def log_sample_info(self,new_x):
         
@@ -259,8 +259,8 @@ class GIBOptimizer(object):
 
             theta_i.grad = -params_grad  # set gradients
             self.optimizer_torch.step()  
-            self.log_grads(mean_d,variance_d,params_grad,inv_hessian) 
-            self.model.log_hypers(self.n_samples)
+            #self.log_grads(mean_d,variance_d,params_grad,inv_hessian) 
+            #self.model.log_hypers(self.n_samples)
             
     
     def fit_model_hypers(self,model):
