@@ -8,10 +8,10 @@ from botorch.models.transforms.input import InputStandardize
 from botorch.models.transforms.outcome import Standardize
 from gpytorch import ExactMarginalLogLikelihood
 from gpytorch.distributions import MultivariateNormal
-from src.means import MyConstantMean,AdvantageMean
+from src.gp.means import MyConstantMean,AdvantageMean
 
-from src.kernels import *
-from src.means import *
+from src.gp.kernels import *
+from src.gp.means import *
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger("ShapeLog."+__name__)

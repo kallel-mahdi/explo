@@ -13,12 +13,13 @@ from mushroom_rl.utils.spaces import Box, Discrete
 
 from src.approximators.actor import MLP, ActorNetwork
 from src.approximators.critic import CriticNetwork
-from src.ddpg import DDPG
+from src.approximators.ddpg import DDPG
+from src.approximators.td3 import TD3
 from src.environments.gym_env import Gym
 from src.environments.objective import EnvironmentObjective
-from src.gp import DEGP, MyGP
-from src.kernels import *
-from src.means import *
+from src.gp.gp import DEGP, MyGP
+from src.gp.kernels import *
+from src.gp.means import *
 from src.optimizers.gibo import GIBOptimizer
 
 logging.config.fileConfig('logging.conf')
@@ -109,7 +110,7 @@ def setup_agent(objective_env):
                         output_shape=(1,))
 
 
-    agent = DDPG(mdp.info, policy_class,policy_params,
+    agent = TD3(mdp.info, policy_class,policy_params,
                 actor_params, actor_optimizer, 
                 critic_params,
                 batch_size, initial_replay_size, max_replay_size,

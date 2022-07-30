@@ -6,7 +6,7 @@ import gpytorch
 import torch
 from botorch.fit import fit_gpytorch_model
 from gpytorch.mlls import ExactMarginalLogLikelihood
-from src.kernels import *  # # delte later
+from src.gp.kernels import *  # # delte later
 from src.optimizers.helpers import my_fit_gpytorch_model
 #from torch.optim import LBFGS ## Full pytorch LBFGS implementation
 
@@ -115,14 +115,14 @@ class GIBOptimizer(object):
         
     def __init__(self,agent,model,
                 n_eval,n_max,n_info_samples,
-                normalize_gradient,standard_deviation_scaling,
+                normalize_gradient,confidence_gradient,
                 delta):
 
         gradInfo = GradientInformation(model)
         theta_i = agent._actor_approximator.model.network.default_weights.data
         params_history = [theta_i.clone().detach()]
         len_params = theta_i.shape[-1]
-        optimizer_torch = torch.optim.SGD([theta_i], lr=0.5,weight_decay=1e-5)
+        optimizer_torch = torch.optim.SGD([theta_i], lr=0.5)
 
         
         self.__dict__.update(locals())
@@ -132,7 +132,6 @@ class GIBOptimizer(object):
         self.n_grad_steps = 0
         
         print(f' Gibo will use {self.n_max} last points to fit GP and {self.n_info_samples} info samples')
-        
     
     def sample_acqf(self,bounds):
         
@@ -177,7 +176,6 @@ class GIBOptimizer(object):
 
             if acq_value_old is not None:
                 
-                #if (acq_value-acq_value_old) < 1e-2 and n_info > 2:
                 if (acq_value-acq_value_old) < 1e-2:
                     
                     break                
@@ -188,33 +186,10 @@ class GIBOptimizer(object):
             #self.log_sample_info(new_x)
             acq_value_old = acq_value
         
-        #self.trainer.log(self.n_samples,{"acq_value (after finish)":acq_value})
-        #self.trainer.log(self.n_samples,{"n_info_points":n_info})
-                              
-    def log_sample_info(self,new_x):
-        
-        theta_i = self.theta_i
-        
-        kernel_states = self.model.covar_module.states
-        a1 = self.model.covar_module.run_parameters(new_x,kernel_states).squeeze().T
-        a2 = self.model.covar_module.run_parameters(theta_i,kernel_states).squeeze().T
-        
-        param_distance_to_local = torch.linalg.norm(theta_i-new_x)
-        action_distance_to_local = torch.linalg.norm(a1-a2)
-        
-        self.trainer.log(self.n_samples,{
-            "param_distance_to_local":param_distance_to_local,
-            "action_distance_to_local":action_distance_to_local,
-        })
+        self.trainer.log(self.n_samples,{"acq_value (after finish)":acq_value})
+        self.trainer.log(self.n_samples,{"n_info_points":n_info})
 
 
-
-    def current_actions(self,params):
-        
-            kernel_states = self.model.covar_module.states
-            a = self.model.covar_module.mlp(kernel_states,params).flatten()
-            return a
-        
     def compute_inv_hessian(self,params):
         
         kernel_states = self.model.covar_module.states    
@@ -227,7 +202,7 @@ class GIBOptimizer(object):
         grads = ( (1/lengthscales) * grads.T).T
         hessian = (1/n_ard_dims)*(grads.T @ grads)
         n = hessian.shape[0]
-        inv_hessian = torch.linalg.inv(hessian + 1e-1*torch.eye(n))
+        inv_hessian = torch.linalg.inv(hessian + 1e-4*torch.eye(n))
         
         return inv_hessian
 
@@ -244,39 +219,34 @@ class GIBOptimizer(object):
             self.optimizer_torch.zero_grad()
             mean_d, variance_d = model.posterior_derivative(theta_i)
             params_grad = mean_d.view(1, self.len_params)
+
+
+            if self.confidence_gradient:
+
+                grad_mask = torch.abs(mean_d) >= 2*torch.abs(variance_d)
+                params_grad *= grad_mask
             
             if self.normalize_gradient:
                 
-                # lengthscale = model.covar_module.base_kernel.lengthscale.detach()
-                # params_grad = torch.nn.functional.normalize(params_grad) * lengthscale
-                
-                params_grad = torch.nn.functional.normalize(params_grad)
-                inv_hessian = self.compute_inv_hessian(self.theta_i)
-                params_grad = (inv_hessian @ params_grad.T).T     
-            
-            # if self.standard_deviation_scaling:
-            #     params_grad = params_grad / torch.diag(variance_d.view(self.len_params, self.len_params))
+                if isinstance(self.model.covar_module,StateKernel):
 
+                    inv_hessian = self.compute_inv_hessian(self.theta_i)
+                    params_grad = (inv_hessian @ params_grad.T).T   
+                    params_grad = torch.nn.functional.normalize(params_grad)
+
+                else :  
+
+                    params_grad = torch.nn.functional.normalize(params_grad)
+                    lengthscale = model.covar_module.base_kernel.lengthscale.detach()
+                    params_grad = lengthscale * params_grad
+                
+            
             theta_i.grad = -params_grad  # set gradients
             self.optimizer_torch.step()  
-            #self.log_grads(mean_d,variance_d,params_grad,inv_hessian) 
-            #self.model.log_hypers(self.n_samples)
+            self.log_grads(mean_d,variance_d,params_grad,inv_hessian) 
+            self.model.log_hypers(self.n_samples)
             
     
-    def fit_model_hypers(self,model):
-        
-        if (model.N >= self.n_max): 
-            
-            # Restrict data to only recent points
-            last_x = model.train_inputs[0][-self.n_max:]
-            last_y = model.train_targets[-self.n_max:]
-            model.set_train_data(last_x,last_y,strict=False)
-            model.posterior(self.theta_i)  ## hotfix
-            
-            # Adjust hyperparameters
-            mll = ExactMarginalLogLikelihood(model.likelihood, model)
-            fit_gpytorch_model(mll)
-            
         
     def step(self,model,objective_env):
         
@@ -300,14 +270,17 @@ class GIBOptimizer(object):
         
         targets = self.trainer.model.y_hist.squeeze().numpy()
         self.trainer.log(self.n_samples,{"max_return":targets.max()})
-        
+
+        #Adjust hyperparameters before information collection
+        self.fit_model_hypers(model)
+     
         # Sample locally to optimize gradient information
         self.gradInfo.update_theta_i(theta_i) ## this also update KxX_dx
         bounds = torch.tensor([[-self.delta], [self.delta]]) + theta_i
         self.optimize_information(objective_env,model,bounds)
         
-        ## NEEEW : Adjust hyperparameters after information collection for better gradient estimate
-        self.fit_model_hypers(model)
+        # # NEEEW : Adjust hyperparameters after information collection for better gradient estimate
+        # self.fit_model_hypers(model)
      
         # Take one step in direction of the gradient
         self.one_gradient_step(model, theta_i)
@@ -317,6 +290,27 @@ class GIBOptimizer(object):
         
         
         #print(f'agent actor params {self.agent._actor_approximator.model.network.default_weights.data}')
+    
+    def current_actions(self,params):
+        
+            kernel_states = self.model.covar_module.states
+            a = self.model.covar_module.mlp(kernel_states,params).flatten()
+            return a
+
+    def fit_model_hypers(self,model):
+        
+        if (model.N >= self.n_max): 
+            
+            # Restrict data to only recent points
+            last_x = model.train_inputs[0][-self.n_max:]
+            last_y = model.train_targets[-self.n_max:]
+            model.set_train_data(last_x,last_y,strict=False)
+            model.posterior(self.theta_i)  ## hotfix
+            
+            # Adjust hyperparameters
+            mll = ExactMarginalLogLikelihood(model.likelihood, model) ## max_retries = 20/default max_retries is 5
+            fit_gpytorch_model(mll)
+            
 
     def log_grads(self,mean_d,variance_d,params_grad,inv_hessian=None):
         
@@ -343,5 +337,25 @@ class GIBOptimizer(object):
             })
             
         self.trainer.log(self.n_samples,dct)
+    
+    def log_sample_info(self,new_x):
+        
+        theta_i = self.theta_i
+        
+        kernel_states = self.model.covar_module.states
+        a1 = self.model.covar_module.run_parameters(new_x,kernel_states).squeeze().T
+        a2 = self.model.covar_module.run_parameters(theta_i,kernel_states).squeeze().T
+        
+        param_distance_to_local = torch.linalg.norm(theta_i-new_x)
+        n = a1.shape[0]
+        action_distance_to_local = (torch.linalg.norm(a1-a2)**2 )/n
+        
+        
+        self.trainer.log(self.n_samples,{
+            "param_distance_to_local":param_distance_to_local,
+            "action_distance_to_local":action_distance_to_local,
+        })
+
+
         
         

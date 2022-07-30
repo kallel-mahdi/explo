@@ -148,7 +148,7 @@ class DDPG(DeepAC):
         self.state = state
         self.action = action
         self.q_target = q_target
-        self._critic_approximator.model.network.train()
+        #self._critic_approximator.model.network.train()
         self._critic_approximator.fit(state, action, q_target,n_epochs=n_epochs,
                                         **self._critic_fit_params)
         

@@ -96,12 +96,11 @@ class EnvironmentObjective(object):
                 if torch.is_tensor(params):
                     ### list of parameters for BO
                     action = self.mlp(state.unsqueeze(0),params).squeeze()
-                    #print("action shape",action.shape)
                 
                 else :
                     ### params is a torchregressor of mushroomrl
                     action = params(state.unsqueeze(0),output_tensor=True).squeeze()
-                    #print("action shape",action.shape)
+                    
                     
             ###########################
             

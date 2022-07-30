@@ -11,7 +11,7 @@ from sklearn.metrics import mean_absolute_error as mae
 from sklearn.metrics import mean_squared_error as mse
 from sklearn.model_selection import train_test_split
 
-from src.kernels import StateKernel
+from src.gp.kernels import StateKernel
 
 ##fix random seed
 random.seed(0)

@@ -20,8 +20,8 @@ class Trainer:
         
         if wandb_logger:
             wandb.init(project=project_name,name=run_name,config=wandb_config) 
-            # import os
-            # os.environ["WANDB_START_METHOD"] = "thread"
+            import os
+            os.environ["WANDB_START_METHOD"] = "thread"
 
             
         
@@ -47,9 +47,7 @@ class Trainer:
         objective_env = self.objective_env 
         
         
-        
         while optimizer.n_samples < self.n_steps :
-            
             
             
             optimizer.step(model,objective_env)
@@ -69,14 +67,15 @@ class Trainer:
         
         
         if self.save_best : self.save_bests()
+
+        if self.wandb_logger : wandb.finish()
         
 
         return self.best_x,self.best_y
 
     def log(self,n_samples,dictionary):
         
-        
-            
+           
         dictionary.update({"n_samples":n_samples})
 
         commit = "policy_return" in dictionary.keys()

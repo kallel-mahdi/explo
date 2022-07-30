@@ -1,6 +1,6 @@
 {
     "python.linting.pylamaEnabled": false,
-    "python.linting.enabled": true,
+    "python.linting.enabled": false,
     "python.linting.pylintEnabled": true,
     "git.ignoreLimitWarning": true
 }

@@ -20,6 +20,7 @@ class MyRBFKernel(ScaleKernel):
                 lengthscale_hyperprior=None,
                 outputscale_constraint=None,
                 outputscale_hyperprior=None,
+                mlp = None, ## unused
                 
                 ):
         
@@ -43,6 +44,7 @@ class MyRBFKernel(ScaleKernel):
             self.base_kernel.lengthscale = lengthscale_hyperprior.mean
         if outputscale_hyperprior is not None:
             self.outputscale = outputscale_hyperprior.mean  
+
             
         
     def forward(self,x1,x2,**params):

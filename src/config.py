@@ -1,7 +1,7 @@
 
 import gpytorch
 
-def get_env_configs(env_name):
+def get_env_configs(env_name,manipulate_state):
     
         if env_name == "CartPole-v1":
 
@@ -70,16 +70,26 @@ def get_env_configs(env_name):
 
 
         else : raiseValueError("Unknown environment")
+
+        env_config["manipulate_state"] = manipulate_state
     
         return env_config,env_appx_config
 
 
 
-def get_configs(env_name,kernel_name):
+def get_configs(env_name,kernel_name,
+        use_ard,manipulate_state,conf_grad,norm_grad,advantage_mean,
+        wandb_logger=False,run_name=None):
 
 
         
-        env_config,env_appx_config = get_env_configs(env_name)
+        env_config,env_appx_config = get_env_configs(env_name,manipulate_state)
+
+        
+        policy_config = {
+                "add_layer":[],### can be empty or [8,7] for adding 2 layers with width 8,7  neurons respectively
+                "add_bias":False,
+        }
 
         if env_name == "CartPole-v1": ## cartpole is a very noisy task
                 
@@ -96,34 +106,52 @@ def get_configs(env_name,kernel_name):
 
 
         kernel_config = {
-                "use_ard":True,
+                "use_ard":use_ard,
                 "kernel_name":kernel_name,
-                "lengthscale_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.01,b=0.3),
-                "lengthscale_constraint":gpytorch.constraints.constraints.Interval(0.01,0.3),
-                "outputscale_constraint":gpytorch.constraints.constraints.GreaterThan(0.01),
-                "outputscale_hyperprior":gpytorch.priors.torch_priors.NormalPrior(loc=2.0,scale=1.0),
+                
                 }
+
+        if "state" in kernel_name:
+
+                kernel_config.update({
+                        "lengthscale_hyperprior":gpytorch.priors.torch_priors.GammaPrior(2,1),
+                        "lengthscale_constraint":gpytorch.constraints.constraints.Interval(0.1,10),
+                        "outputscale_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.01,b=2),
+                        "outputscale_constraint":gpytorch.constraints.constraints.Interval(0.1,2),
+                })
+                
+        else :
+
+                kernel_config.update({
+                        "lengthscale_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.01,b=0.3),
+                        "lengthscale_constraint":gpytorch.constraints.constraints.Interval(0.01,0.3),
+                        "outputscale_constraint":gpytorch.constraints.constraints.GreaterThan(0.01),
+                        "outputscale_hyperprior":gpytorch.priors.torch_priors.NormalPrior(loc=2.0,scale=1.0),
+                })
         
         mean_config = {
-                "advantage":True,
+                "advantage":advantage_mean,
         }
 
-
-        trainer_config = {
-                "n_steps" :50 ,
-                "report_freq":10,
-                "save_best":True,
-        }
 
         optimizer_config = {
-                "n_eval":1,
+                "n_eval":2,
                 ### for GIBO
                 "n_max":env_appx_config["n_max"], 
                 "n_info_samples":env_appx_config["n_info"],
                 "delta":0.1, ## 0.01 better for linear
-                ### hessian normalisation applies only for rbf
-                "normalize_gradient":True if kernel_name == "rbf" else False,
-                "standard_deviation_scaling":False,
+                "confidence_gradient":conf_grad,
+                "normalize_gradient":norm_grad,
+                
         }
 
-        return env_config,likelihood_config,kernel_config,mean_config,optimizer_config,trainer_config
+        trainer_config = {
+                "n_steps" :1000 ,
+                "report_freq":100,
+                "save_best":False,
+                "wandb_logger":wandb_logger,
+                "project_name":env_name+"_"+kernel_name,
+                "run_name" : run_name,
+                "wandb_config": {**env_config,**optimizer_config,**likelihood_config,**kernel_config,**policy_config}
+        }
+        return env_config,policy_config,likelihood_config,kernel_config,mean_config,optimizer_config,trainer_config
