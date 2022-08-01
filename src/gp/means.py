@@ -37,8 +37,7 @@ class AdvantageMean(Mean):
         
     
     def set_train_data(self,local_mean,local_states,local_transitions):
-        
-        
+    
         self.constant.data = local_mean
         self.local_states = local_states
         self.local_transitions = local_transitions
@@ -56,6 +55,9 @@ class AdvantageMean(Mean):
         self.agent.fit_critic()
         
     def __call__(self,params):
+
+
+
         
         
         with torch.no_grad():
@@ -84,9 +86,9 @@ class AdvantageMean(Mean):
         """ Mushroom RL Call copies the parameters and breaks computation graph for grad"""
         #local_actions = self.agent._actor_approximator(self.local_states,theta_t).squeeze().T
         local_actions = actor(self.local_states,theta_t).squeeze().T
-        #local_q = agent._critic_approximator(self.local_states, local_actions, output_tensor=True, **agent._critic_predict_params)
+        local_q = agent._critic_approximator(self.local_states, local_actions,idx=0, output_tensor=True, **agent._critic_predict_params)
         #local_q = agent._target_critic_approximator(self.local_states, local_actions, output_tensor=True, **agent._critic_predict_params)
-        local_q = agent._target_critic_approximator(self.local_states, local_actions,idx=0,output_tensor=True, **agent._critic_predict_params)
+        #local_q = agent._target_critic_approximator(self.local_states, local_actions,idx=0,output_tensor=True, **agent._critic_predict_params)
         
         return torch.mean(local_q)
     

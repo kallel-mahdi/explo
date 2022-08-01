@@ -52,6 +52,7 @@ class MyGP(SingleTaskGP):
         
         if  isinstance(self.covar_module,StateKernel):
             
+            
             self.mean_module.set_train_data(mean,states,transitions)
             
             self.covar_module.set_train_data(states)

@@ -114,19 +114,19 @@ def get_configs(env_name,kernel_name,
         if "state" in kernel_name:
 
                 kernel_config.update({
-                        "lengthscale_hyperprior":gpytorch.priors.torch_priors.GammaPrior(2,1),
+                        "lengthscale_hyperprior":gpytorch.priors.torch_priors.GammaPrior(1.5,0.5),
                         "lengthscale_constraint":gpytorch.constraints.constraints.Interval(0.1,10),
                         "outputscale_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.01,b=2),
-                        "outputscale_constraint":gpytorch.constraints.constraints.Interval(0.1,2),
+                        "outputscale_constraint":gpytorch.constraints.constraints.Interval(0.01,2), #0.1 seems to be working fine :o
                 })
                 
         else :
 
                 kernel_config.update({
                         "lengthscale_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.01,b=0.3),
-                        "lengthscale_constraint":gpytorch.constraints.constraints.Interval(0.01,0.3),
-                        "outputscale_constraint":gpytorch.constraints.constraints.GreaterThan(0.01),
+                        "lengthscale_constraint":gpytorch.constraints.constraints.Interval(0.01,0.3), ## constraints are loose to avoid crash
                         "outputscale_hyperprior":gpytorch.priors.torch_priors.NormalPrior(loc=2.0,scale=1.0),
+                        "outputscale_constraint":gpytorch.constraints.constraints.GreaterThan(0.01),
                 })
         
         mean_config = {

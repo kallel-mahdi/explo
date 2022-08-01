@@ -29,8 +29,8 @@ def run(seed):
         torch.set_num_threads(1)
                 
         #env_name = "CartPole-v1" ## Action kernel + State_norm looks very well for cartpole
-        env_name = "Swimmer-v4" ##  State_norm stabilizes training 
-        #env_name = "Hopper-v2"
+        #env_name = "Swimmer-v4" ##  State_norm stabilizes training 
+        env_name = "Hopper-v2"
         #env_name = "Walker2d-v3"
 
 
@@ -58,16 +58,18 @@ def run(seed):
 
 if __name__ == '__main__':
 
+        
         wandb.require("service")
-
+        
+        wandb.setup()  
         torch.set_num_threads(1)
-        np.random.seed(42)
+        np.random.seed(42)## then 41
 
-        n = 20
+        n = 10
         seeds = np.random.randint(low=0,high=2**30,size=(n,))
         seeds = [ int(i) for i in seeds]
 
-        run(434285667)
+        with Pool(processes=n) as p:
+                p.map(run, seeds)
 
-        # with Pool(processes=n) as p:
-        #         p.map(run, seeds)
+        

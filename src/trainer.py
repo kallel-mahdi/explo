@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import  torch
 import  numpy as np
 import wandb
+from copy import deepcopy
 class Trainer:
     
     def __init__(self,model,objective_env,optimizer,
@@ -19,7 +20,7 @@ class Trainer:
         model.trainer = self
         
         if wandb_logger:
-            wandb.init(project=project_name,name=run_name,config=wandb_config) 
+            self.wb_run = wandb.init(project=project_name,name=run_name,config=wandb_config) 
             import os
             os.environ["WANDB_START_METHOD"] = "thread"
 
@@ -46,8 +47,16 @@ class Trainer:
         optimizer,model = self.optimizer,self.model
         objective_env = self.objective_env 
         
+        n_old = 0
         
         while optimizer.n_samples < self.n_steps :
+
+            if (optimizer.n_samples - n_old) > 10 : 
+
+                n_old = deepcopy(optimizer.n_samples)
+                
+                print(f'{self.wb_run.name} : n_samples : {optimizer.n_samples}')
+            
             
             
             optimizer.step(model,objective_env)
@@ -78,7 +87,8 @@ class Trainer:
            
         dictionary.update({"n_samples":n_samples})
 
-        commit = "policy_return" in dictionary.keys()
+        #commit = "policy_return" in dictionary.keys()
+        commit = "policy_return_at_grad" in dictionary.keys()
         
         if self.wandb_logger :
             
