@@ -100,10 +100,10 @@ def get_configs(env_name,kernel_name,
              
         else : 
                 likelihood_config = {
-                "noise_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.01,b=0.02),
-                "noise_constraint":gpytorch.constraints.constraints.Interval(0.01,0.02)
+                "noise_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.01,b=0.05),
+                "noise_constraint":gpytorch.constraints.constraints.Interval(0.01,0.05)
+                
                 }
-
 
         kernel_config = {
                 "use_ard":use_ard,
@@ -115,9 +115,11 @@ def get_configs(env_name,kernel_name,
 
                 kernel_config.update({
                         "lengthscale_hyperprior":gpytorch.priors.torch_priors.GammaPrior(1.5,0.5),
-                        "lengthscale_constraint":gpytorch.constraints.constraints.Interval(0.1,10),
+                        #"lengthscale_constraint":gpytorch.constraints.constraints.Interval(0.1,10),
+                        # "outputscale_hyperprior":gpytorch.priors.torch_priors.NormalPrior(loc=2.0,scale=1.0),
+                        # "outputscale_constraint":gpytorch.constraints.constraints.GreaterThan(0.01),
                         "outputscale_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.01,b=2),
-                        "outputscale_constraint":gpytorch.constraints.constraints.Interval(0.01,2), #0.1 seems to be working fine :o
+                        "outputscale_constraint":gpytorch.constraints.constraints.Interval(0.01,2), #0.1 seems to be working fine :o                        
                 })
                 
         else :

@@ -245,7 +245,6 @@ class GIBOptimizer(object):
             self.optimizer_torch.step()  
             self.log_grads(mean_d,variance_d,params_grad,inv_hessian) 
             self.model.log_hypers(self.n_samples)
-            
     
         
     def step(self,model,objective_env):

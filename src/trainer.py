@@ -19,13 +19,17 @@ class Trainer:
         optimizer.trainer = self
         model.trainer = self
         
-        if wandb_logger:
-            self.wb_run = wandb.init(project=project_name,name=run_name,config=wandb_config) 
-            import os
-            os.environ["WANDB_START_METHOD"] = "thread"
-
-            
         
+        if wandb_logger:
+            self.wb_run = wandb.init(project=project_name+"1",name=run_name,config=wandb_config,
+            settings=wandb.Settings(start_method='spawn')
+            ) 
+        
+            import os
+            torch.set_num_threads(4)
+            os.environ["OMP_NUM_THREADS"]="4"
+            os.environ["MKL_NUM_THREADS"]="4"
+            
     
     def save_bests(self):
 
