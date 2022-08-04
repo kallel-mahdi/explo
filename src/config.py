@@ -15,7 +15,8 @@ def get_env_configs(env_name,manipulate_state):
                 env_appx_config = {
                         
                         "n_max":20, ## number of samples used to fit gp
-                        "n_info": 8 ## number of samples collected to computed local gradient
+                        "n_info": 8, ## number of samples collected to computed local gradient
+                        "n_steps":100,
                 }
                 
         elif env_name == "Swimmer-v4":
@@ -31,7 +32,9 @@ def get_env_configs(env_name,manipulate_state):
                 env_appx_config = {
                         "n_max":32,
                         "n_info": 16,
+                        "n_steps":500,
                 }
+        
 
         elif env_name == "Hopper-v2":
 
@@ -48,8 +51,26 @@ def get_env_configs(env_name,manipulate_state):
                         
                         "n_max":48,      
                         "n_info": 8,
+                        "n_steps":1000,
                         
                 }
+        
+        elif env_name == "HalfCheetah-v2":
+
+                env_config = {
+                        "n_init" : 1,
+                        "reward_scale":5000,
+                        "reward_shift":0,
+                        "env_name":"HalfCheetah-v2",
+                        
+                }
+
+                env_appx_config = {
+                        "n_max":64,
+                        "n_info": 32,
+                        "n_steps":2000,
+                }
+
         
         elif env_name == "Walker2d-v3":
     
@@ -63,8 +84,8 @@ def get_env_configs(env_name,manipulate_state):
 
                 env_appx_config = {
                         
-                        "n_max":48,      
-                        "n_info": 8,
+                        "n_max":64,      
+                        "n_info": 32,
                         
                 }
 
@@ -79,7 +100,7 @@ def get_env_configs(env_name,manipulate_state):
 
 def get_configs(env_name,kernel_name,
         use_ard,manipulate_state,conf_grad,norm_grad,advantage_mean,
-        wandb_logger=False,run_name=None):
+        wandb_logger=False,project_name=None,run_name=None):
 
 
         
@@ -91,7 +112,7 @@ def get_configs(env_name,kernel_name,
                 "add_bias":False,
         }
 
-        if env_name == "CartPole-v1": ## cartpole is a very noisy task
+        if env_name == "CartPole-v1" and not "state" in kernel_name: ## cartpole is a very noisy task
                 
              likelihood_config = {
                 "noise_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.5,b=0.501),
@@ -147,12 +168,13 @@ def get_configs(env_name,kernel_name,
                 
         }
 
+        
         trainer_config = {
-                "n_steps" :1000 ,
+                "n_steps":env_appx_config["n_steps"] ,
                 "report_freq":100,
                 "save_best":False,
                 "wandb_logger":wandb_logger,
-                "project_name":env_name+"_"+kernel_name,
+                "project_name":project_name,
                 "run_name" : run_name,
                 "wandb_config": {**env_config,**optimizer_config,**likelihood_config,**kernel_config,**policy_config}
         }

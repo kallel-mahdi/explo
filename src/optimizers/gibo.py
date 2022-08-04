@@ -3,6 +3,7 @@ import logging.config
 
 import botorch
 import gpytorch
+from numpy import var
 import torch
 from botorch.fit import fit_gpytorch_model
 from gpytorch.mlls import ExactMarginalLogLikelihood
@@ -167,7 +168,7 @@ class GIBOptimizer(object):
             ### log the real return (not noisy)
             j = new_y
             #j,_,_ = objective_env(new_x,5)
-            self.trainer.log(self.n_samples,{"policy_return":j})
+            self.trainer.log(self.n_samples,{"policy_return":j,"episode_length":new_s.shape[0]})
             ##############################
             model.append_train_data(new_x,new_y, strict=False) 
             model.append_module_data(new_y,new_s,new_transitions)
@@ -223,8 +224,9 @@ class GIBOptimizer(object):
 
             if self.confidence_gradient:
 
-                grad_mask = torch.abs(mean_d) >= 2*torch.abs(variance_d)
-                params_grad *= grad_mask
+                variance_d = torch.diag(variance_d.squeeze())
+                grad_mask = torch.abs(mean_d) >= 1*torch.abs(variance_d)
+                params_grad *= (grad_mask)
             
             if self.normalize_gradient:
                 
@@ -261,7 +263,7 @@ class GIBOptimizer(object):
         ### log the real policy return not noisy
         j = local_y
         #j,_,_ = objective_env(theta_i,5)            
-        self.trainer.log(self.n_samples,{"policy_return":j,"policy_return_at_grad":j})
+        self.trainer.log(self.n_samples,{"policy_return":j,"policy_return_at_grad":j,"episode_length":local_s.shape[0]})
         ###########################################
         
         model.append_train_data(theta_i,local_y, strict=False)
@@ -323,6 +325,8 @@ class GIBOptimizer(object):
             "mean_grad(before hessian)":mean_d.mean(),
             "max_covar(before hessian)":variance_d.max(),
             "max_var/mean": variance_mean.max(), 
+            "mean_var/mean": variance_mean.mean(), 
+            "median_var/mean": variance_mean.median(), 
             }
         
     

@@ -21,7 +21,7 @@ class Trainer:
         
         
         if wandb_logger:
-            self.wb_run = wandb.init(project=project_name+"1",name=run_name,config=wandb_config,
+            self.wb_run = wandb.init(project=project_name,name=run_name,config=wandb_config,
             settings=wandb.Settings(start_method='spawn')
             ) 
         
@@ -58,8 +58,10 @@ class Trainer:
             if (optimizer.n_samples - n_old) > 10 : 
 
                 n_old = deepcopy(optimizer.n_samples)
+
+                if self.wandb_logger :
                 
-                print(f'{self.wb_run.name} : n_samples : {optimizer.n_samples}')
+                    print(f'{self.wb_run.name} : n_samples : {optimizer.n_samples}')
             
             
             
@@ -91,8 +93,8 @@ class Trainer:
            
         dictionary.update({"n_samples":n_samples})
 
-        #commit = "policy_return" in dictionary.keys()
-        commit = "policy_return_at_grad" in dictionary.keys()
+        commit = "policy_return" in dictionary.keys()
+        #commit = "policy_return_at_grad" in dictionary.keys()
         
         if self.wandb_logger :
             
