@@ -55,7 +55,7 @@ def get_env_configs(env_name,manipulate_state):
                         
                 }
         
-        elif env_name == "HalfCheetah-v2":
+        elif env_name == "HalfCheetah-v4":
 
                 env_config = {
                         "n_init" : 1,
@@ -66,8 +66,8 @@ def get_env_configs(env_name,manipulate_state):
                 }
 
                 env_appx_config = {
-                        "n_max":64,
-                        "n_info": 32,
+                        "n_max":48,
+                        "n_info": 16,
                         "n_steps":2000,
                 }
 
@@ -86,6 +86,25 @@ def get_env_configs(env_name,manipulate_state):
                         
                         "n_max":64,      
                         "n_info": 32,
+                        "n_steps":4000,
+                        
+                }
+        
+        elif env_name == "Ant-v4":
+    
+                env_config = {
+                        "n_init" : 1,
+                        "reward_scale":1000, 
+                        "reward_shift":-1,
+                        "env_name":"Ant-v4",
+                }
+        
+
+                env_appx_config = {
+                        
+                        "n_max":80,      
+                        "n_info": 40,
+                        "n_steps":4000,
                         
                 }
 
@@ -99,7 +118,7 @@ def get_env_configs(env_name,manipulate_state):
 
 
 def get_configs(env_name,kernel_name,
-        use_ard,manipulate_state,conf_grad,norm_grad,advantage_mean,
+        use_ard,manipulate_state,conf_grad,norm_grad,advantage_mean,adaptive_lr,
         wandb_logger=False,project_name=None,run_name=None):
 
 
@@ -135,7 +154,7 @@ def get_configs(env_name,kernel_name,
         if "state" in kernel_name:
 
                 kernel_config.update({
-                        "lengthscale_hyperprior":gpytorch.priors.torch_priors.GammaPrior(1.5,0.5),
+                        "lengthscale_hyperprior":gpytorch.priors.torch_priors.GammaPrior(1.25,0.25), ## 1.5,0.5
                         #"lengthscale_constraint":gpytorch.constraints.constraints.Interval(0.1,10),
                         # "outputscale_hyperprior":gpytorch.priors.torch_priors.NormalPrior(loc=2.0,scale=1.0),
                         # "outputscale_constraint":gpytorch.constraints.constraints.GreaterThan(0.01),
@@ -162,13 +181,15 @@ def get_configs(env_name,kernel_name,
                 ### for GIBO
                 "n_max":env_appx_config["n_max"], 
                 "n_info_samples":env_appx_config["n_info"],
-                "delta":0.1, ## 0.01 better for linear
+                "delta":0.1, ## default is 0.1
+                "learning_rate":0.5, ## default is 0.5, we used 0.1 for ablation
                 "confidence_gradient":conf_grad,
                 "normalize_gradient":norm_grad,
+                "adaptive_lr":adaptive_lr,
                 
         }
 
-        
+
         trainer_config = {
                 "n_steps":env_appx_config["n_steps"] ,
                 "report_freq":100,
@@ -178,4 +199,6 @@ def get_configs(env_name,kernel_name,
                 "run_name" : run_name,
                 "wandb_config": {**env_config,**optimizer_config,**likelihood_config,**kernel_config,**policy_config}
         }
+
+        
         return env_config,policy_config,likelihood_config,kernel_config,mean_config,optimizer_config,trainer_config

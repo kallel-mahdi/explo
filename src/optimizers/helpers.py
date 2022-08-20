@@ -1,85 +1,57 @@
-import botorch
-import gpytorch
 import torch
+import numpy as np
+from scipy.stats import chi2
+
+def get_bound(n_dim,p):
 
 
-def my_fit_gpytorch_model(model,training_iter=100):
+    dx = 0.001
+    x = np.arange(0, n_dim,dx)
+
+    cdf = np.cumsum(chi2.pdf(x, df=n_dim)*dx)
+    bound = max(x[cdf<=p])
+
+    return torch.tensor(bound)
+
+
+def sparsify(mean_d,var_d,p=0.01):
+
+    ### Get knapsack capacity
+    mean_d = mean_d.squeeze()
+    var_d = torch.abs(var_d.squeeze())
+    var_d = var_d.clamp_min(1e-9)
+    n_dim = mean_d.shape[0]
+    bound = get_bound(n_dim,p)
+
     
-    """ Fit the hyperparameters of a gpytorch model 
-    using SGD and fixed number of steps, contrary to the original LBFGS implementation."""
+
+    ### We use a heuristic for the knapsack algorithm
+    cost = (mean_d**2)/var_d 
+    idx = torch.argsort(cost)
+    cost = cost[idx]
+    weight = 0
+    last_i = 0
     
-    train_x = model.train_inputs[0]
-    train_y = model.train_targets
-    # Find optimal model hyperparameters
-    model.train()
-    model.likelihood.train()
+    ### While knapsack is not full add items
+    for i in range(len(idx)):
 
-    # Use the adam optimizer (Maybe define it outside?)
+        if (weight + cost[i] <= bound):
+            weight+=cost[i]
+            last_i = i
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)  # Includes GaussianLikelihood parameters
+        else :
+            break
 
-    # "Loss" for GPs - the marginal log likelihood
-    mll = gpytorch.mlls.ExactMarginalLogLikelihood(model.likelihood, model)
-
-    for i in range(training_iter):
-        # Zero gradients from previous iteration
-        optimizer.zero_grad()
-        # Output from model
-        output = model(train_x)
-        # Calc loss and backprop gradients
-        loss = -mll(output, train_y)
-        loss.backward()
-        optimizer.step()
+    ### Set all the items in knapsack to 0
+    tmp = mean_d.clone()
+    tmp[idx[:last_i]]=0
     
-    print('Likelihood: %.3f noise: %.3f' % 
-            (
-            - loss.item(),
-            model.likelihood.noise.item())
-            )
+    ### Report fraction of sparsified entries
+    fraction = last_i / len(idx)
 
-def my_optimize_acqf(acq_function,bounds,
-                     q,num_restarts,raw_samples):
-  
-    N,r = num_restarts,raw_samples
-    d = bounds.shape[-1]
-    
-    # generate a large number of random q-batches
-    # these will be used to generate promising samples
-    Xraw = bounds[0] + (bounds[1] - bounds[0]) * torch.rand(r, q, d)
-    Yraw = acq_function(Xraw)  # evaluate the acquisition function on these q-batches
+    print(f'n_dim {n_dim} bound {bound} fraction {fraction}')
+    print(f'cost {cost}')
 
-    # apply the heuristic for sampling promising initial conditions
-    X = botorch.optim.initialize_q_batch_nonneg(Xraw, Yraw, N)
+    return tmp.reshape(1,-1),fraction
 
-    # we'll want gradients for the input
-    X.requires_grad_(True)
-    
-    # set up the optimizer, make sure to only pass in the candidate set here
-    optimizer = torch.optim.Adam([X], lr=0.01)
-    old_loss,new_loss = torch.Tensor([-1e-1]),torch.Tensor([-1])
-
-    # run a basic optimization loop
-    for i in range(75):
-        optimizer.zero_grad()
-        # this performs batch evaluation, so this is an N-dim tensor
-        losses = - acq_function(X)  # torch.optim minimizes
-        loss = losses.sum()
-        
-        loss.backward()  # perform backward pass
-        optimizer.step()  # take a step
-        
-        # clamp values to the feasible set
-        for j, (lb, ub) in enumerate(zip(*bounds)):
-            X.data[..., j].clamp_(lb, ub) # need to do this on the data not X itself
-        
-            
-        #   if (i + 1) % 15 == 0:
-        #       print(f"Iteration {i+1:>3}/75 - Loss: {loss.item():>4.3f}")
-            
-        # use your favorite convergence criterion here...
-        crit = (old_loss-new_loss)/old_loss    
-        if abs(crit) < 1e-2 : break
-    
-    X_best = X[torch.argmax(acq_function(X))]
-    return X_best.detach(),None
 

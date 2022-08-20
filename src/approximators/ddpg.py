@@ -125,7 +125,7 @@ class DDPG(DeepAC):
         with torch.no_grad():
             
             next_state = next_state.astype(np.float32)
-            a = self._target_actor_approximator.predict(next_state, **self._actor_predict_params).squeeze().T
+            a = self._target_actor_approximator.predict(next_state, **self._actor_predict_params).squeeze(axis=0).T
             q = self._target_critic_approximator.predict(next_state, a, **self._critic_predict_params)
             q *= 1 - absorbing
 
@@ -149,6 +149,7 @@ class DDPG(DeepAC):
         self.action = action
         self.q_target = q_target
         #self._critic_approximator.model.network.train()
+
         self._critic_approximator.fit(state, action, q_target,n_epochs=n_epochs,
                                         **self._critic_fit_params)
         

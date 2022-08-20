@@ -30,7 +30,8 @@ def run(seed,
         manipulate_state,
         norm_grad,
         conf_grad,
-        advantage_mean):
+        advantage_mean,
+        adaptive_lr):
 
         #env_name = "CartPole-v1" ## Action kernel + State_norm looks very well for cartpole
         #env_name = "Swimmer-v4" ##  State_norm stabilizes training 
@@ -41,11 +42,11 @@ def run(seed,
         #kernel_name = "rbfstate" ## "rbf"
         #kernel_name = "rbf" ## "rbf"
 
-        project_name = env_name 
-        run_name =  kernel_name +"_"+ str(1 *norm_grad) + str(1 *conf_grad) + str(1 *advantage_mean) +"_"+ str(seed)
+        project_name = env_name+"(confidence_grad)"
+        run_name =  kernel_name +"(lr=0.5)"+"_"+str(1 *manipulate_state)+ str(1 *norm_grad) + str(1 *conf_grad) + str(1 *advantage_mean)+str(1 *adaptive_lr) +"_"+ str(seed)
         env_config,policy_config,likelihood_config,kernel_config,mean_config,optimizer_config,trainer_config = get_configs(env_name,kernel_name,
         use_ard=True,manipulate_state=manipulate_state,
-        conf_grad=conf_grad,norm_grad=norm_grad,advantage_mean=advantage_mean,
+        conf_grad=conf_grad,norm_grad=norm_grad,advantage_mean=advantage_mean,adaptive_lr=adaptive_lr,
         wandb_logger=True,project_name=project_name,run_name=run_name)
 
         model,objective_env,optimizer = setup_experiment(env_config,mean_config,kernel_config,likelihood_config,policy_config,optimizer_config,
@@ -54,7 +55,6 @@ def run(seed,
         trainer = Trainer(model,objective_env,optimizer,**trainer_config)
         trainer.run()
 
-        ### ADD LR SCHEDULAR ===> ENJOY WEEKEND :DDD
 
 
 if __name__ == '__main__':
@@ -63,16 +63,18 @@ if __name__ == '__main__':
         wandb.require("service")
         wandb.setup()  
 
-        env_name = ["Hopper-v2"]
+        
+        env_name = ["Swimmer-v4"]
         kernel_name = ["rbfstate"]
-        manipulate_state = [True]
-        norm_grad = [False,True]
-        conf_grad = [False] ##run this for rbf
+        manipulate_state = [False]
+        conf_grad = [True] ##run this for rbf
+        norm_grad = [False]
         advantage_mean = [True]
+        adaptive_lr = [False]
 
-        for config in itertools.product(*[env_name,kernel_name,manipulate_state,norm_grad,conf_grad,advantage_mean]):
+        for config in itertools.product(*[env_name,kernel_name,manipulate_state,norm_grad,conf_grad,advantage_mean,adaptive_lr]):
 
-                for s in [42,41]:
+                for s in [21]: ## 1000,21
 
                         np.random.seed(s)## 42 then 41
                         n = 5           
@@ -82,6 +84,5 @@ if __name__ == '__main__':
                         with Pool(processes=n) as p:
                                 args = [(seed,*config) for seed in seeds]
                                 p.starmap(run, args)
-
 
         

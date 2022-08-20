@@ -64,9 +64,10 @@ class AdvantageMean(Mean):
         
             agent = self.agent
             local_params = agent._actor_approximator.model.network.default_weights.data
-            local_actions = self.agent._actor_approximator(self.local_states,local_params).squeeze().T
-            actions = self.agent._actor_approximator(self.local_states,params).squeeze().T
-        
+            
+            local_actions = self.agent._actor_approximator(self.local_states,local_params).squeeze(axis=0).T ## [n_params,n_actions,n_states].squeeze().T
+            actions = self.agent._actor_approximator(self.local_states,params).T
+
             local_q = agent._critic_approximator(self.local_states, local_actions, output_tensor=True, **agent._critic_predict_params)
             q = [agent._critic_approximator(self.local_states, a.T, output_tensor=True, **agent._critic_predict_params)
                 
@@ -80,12 +81,13 @@ class AdvantageMean(Mean):
     
     def call2(self,theta_t):
      
+        """ Mushroom RL Call copies the parameters and breaks computation graph for grad"""
+
         agent = self.agent
         actor = self.agent._actor_approximator.model.network
         
-        """ Mushroom RL Call copies the parameters and breaks computation graph for grad"""
         #local_actions = self.agent._actor_approximator(self.local_states,theta_t).squeeze().T
-        local_actions = actor(self.local_states,theta_t).squeeze().T
+        local_actions = actor(self.local_states,theta_t).squeeze(dim=0).T
         local_q = agent._critic_approximator(self.local_states, local_actions,idx=0, output_tensor=True, **agent._critic_predict_params)
         #local_q = agent._target_critic_approximator(self.local_states, local_actions, output_tensor=True, **agent._critic_predict_params)
         #local_q = agent._target_critic_approximator(self.local_states, local_actions,idx=0,output_tensor=True, **agent._critic_predict_params)

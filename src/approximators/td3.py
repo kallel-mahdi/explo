@@ -86,14 +86,17 @@ class TD3(DDPG):
         with torch.no_grad():
 
             next_state = next_state.astype(np.float32)
-            a = self._target_actor_approximator(next_state, **self._actor_predict_params).squeeze().T
 
+            ### this is a numpy array
+            a = self._target_actor_approximator(next_state, **self._actor_predict_params).squeeze(axis=0).T
 
             low = self.mdp_info.action_space.low
             high = self.mdp_info.action_space.high
             eps = np.random.normal(scale=self._noise_std(), size=a.shape)
             eps_clipped = np.clip(eps, -self._noise_clip(), self._noise_clip.get_value())
             a_smoothed = np.clip(a + eps_clipped, low, high)
+
+            #a_smoothed = a (for discrete action space)
 
             q = self._target_critic_approximator.predict(next_state, a_smoothed,
                                                         prediction='min', **self._critic_predict_params)
