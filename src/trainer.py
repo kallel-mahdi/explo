@@ -26,9 +26,9 @@ class Trainer:
             ) 
         
             import os
-            torch.set_num_threads(4)
-            os.environ["OMP_NUM_THREADS"]="4"
-            os.environ["MKL_NUM_THREADS"]="4"
+            torch.set_num_threads(3)
+            os.environ["OMP_NUM_THREADS"]="3"
+            os.environ["MKL_NUM_THREADS"]="3"
             
     
     def save_bests(self):

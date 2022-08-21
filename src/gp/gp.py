@@ -50,7 +50,7 @@ class MyGP(SingleTaskGP):
 
     def set_module_data(self,mean,states,transitions):
         
-        if  isinstance(self.covar_module,StateKernel):
+        #if  isinstance(self.covar_module,StateKernel):
             
             
             self.mean_module.set_train_data(mean,states,transitions)
@@ -81,7 +81,6 @@ class MyGP(SingleTaskGP):
         """updates only train_x and train_y (maybe eventually add train_s)
         """
         
-        #print(f'new_x {new_x.shape} new_y {new_y.shape}')
         ### concatenate new data
         train_x = torch.cat([self.train_inputs[0], new_x])
         train_y = torch.cat([self.train_targets, new_y])
@@ -126,6 +125,8 @@ class MyGP(SingleTaskGP):
             "covar_output_scale" : self.covar_module.outputscale.item(),
             "noise": self.likelihood.noise_covar.noise.item(),    
             "Mean MAE" :self.mean_error,
+            "R2" : self.R2,
+            "R1" : self.R1,
         }
         
         self.trainer.log(n_samples,dct)
@@ -247,9 +248,18 @@ class DEGP(MyGP):
         
         variance_d =  Kxx_dx2 - K_xX_dx @ KXX_inv @ K_xX_dx.transpose(1, 2)
                     
+        
+        ### Variance can be negative (although diagonal should be positive for a PSD matrix)
         #variance_d = variance_d.clamp_min(1e-9)
         
+        
+        
+        y = self.train_targets 
+        y_bar =y.mean()
+        
         self.mean_error = torch.mean(torch.abs(self.train_targets- M_x))
+        self.R2 = 1 - torch.sum((M_x-y)**2)/torch.sum((y_bar-y)**2)
+        self.R1 = 1 - torch.sum(torch.abs(M_x-y))/torch.sum(torch.abs(y_bar-y))
 
         return mean_d, variance_d
             

@@ -57,7 +57,12 @@ def setup_policy(env,policy_config):
     
     return mlp
 
-def setup_agent(objective_env):
+def setup_agent(objective_env,
+    initial_replay_size = 500,
+    max_replay_size = 72000,
+    n_features = 80,
+    tau = .99 ##used to be 0.99
+    ):
     
     # MDP
     horizon = 500
@@ -66,11 +71,7 @@ def setup_agent(objective_env):
 
 
     # Settings
-    initial_replay_size = 500
-    max_replay_size = 32000
-    batch_size = 32000
-    n_features = 80
-    tau = .99
+    batch_size = max_replay_size
 
 
     mdp = objective_env.env
@@ -85,12 +86,13 @@ def setup_agent(objective_env):
                         input_shape = actor_input_shape,
                         output_shape=actor_output_shape,
                         Ls=[actor_input_shape[0],actor_output_shape[0]],
-                        add_bias=False)
+                        add_bias=True)
 
     #actor_params = objective_env.mlp
     
     ### Eventually replace this with GIBO
     
+    ### This is unused
     actor_optimizer = {
                         'class': torch.optim.Adam,
                         'params': {'lr': 1e-4}
@@ -107,7 +109,9 @@ def setup_agent(objective_env):
                         loss=torch.nn.functional.mse_loss,
                         n_features=n_features,
                         input_shape=critic_input_shape,
-                        output_shape=(1,))
+                        output_shape=(1,),
+                        #batch_size = 1000, ## new
+                        )
 
 
     agent = TD3(mdp.info, policy_class,policy_params,

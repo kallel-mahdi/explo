@@ -42,8 +42,8 @@ def run(seed,
         #kernel_name = "rbfstate" ## "rbf"
         #kernel_name = "rbf" ## "rbf"
 
-        project_name = env_name+"(confidence_grad)"
-        run_name =  kernel_name +"(lr=0.5)"+"_"+str(1 *manipulate_state)+ str(1 *norm_grad) + str(1 *conf_grad) + str(1 *advantage_mean)+str(1 *adaptive_lr) +"_"+ str(seed)
+        project_name = env_name+"(ablation2)"
+        run_name =  kernel_name +"_"+str(1 *manipulate_state)+ str(1 *norm_grad) + str(1 *conf_grad) + str(1 *advantage_mean)+str(1 *adaptive_lr) +"_"+ str(seed)
         env_config,policy_config,likelihood_config,kernel_config,mean_config,optimizer_config,trainer_config = get_configs(env_name,kernel_name,
         use_ard=True,manipulate_state=manipulate_state,
         conf_grad=conf_grad,norm_grad=norm_grad,advantage_mean=advantage_mean,adaptive_lr=adaptive_lr,
@@ -64,25 +64,30 @@ if __name__ == '__main__':
         wandb.setup()  
 
         
-        env_name = ["Swimmer-v4"]
-        kernel_name = ["rbfstate"]
+        env_name = ["Hopper-v2"]
+        #env_name = ["CartPole-v1"]
+        kernel_name = ["rbf"]
         manipulate_state = [False]
-        conf_grad = [True] ##run this for rbf
-        norm_grad = [False]
+        conf_grad = [False] ##run this for rbf
+        norm_grad = [True]
         advantage_mean = [True]
         adaptive_lr = [False]
 
+
+        n= 10
+        np.random.seed(42)
+        seeds = np.random.randint(low=0,high=2**30,size=(n,))
+
         for config in itertools.product(*[env_name,kernel_name,manipulate_state,norm_grad,conf_grad,advantage_mean,adaptive_lr]):
 
-                for s in [21]: ## 1000,21
+            
+                seeds = [ int(i) for i in seeds]
 
-                        np.random.seed(s)## 42 then 41
-                        n = 5           
-                        seeds = np.random.randint(low=0,high=2**30,size=(n,))
-                        seeds = [ int(i) for i in seeds]
+                with Pool(processes=n) as p:
+                        args = [(seed,*config) for seed in seeds]
+                        p.starmap(run, args)
 
-                        with Pool(processes=n) as p:
-                                args = [(seed,*config) for seed in seeds]
-                                p.starmap(run, args)
+                #run(*(0,*config))
+
 
         

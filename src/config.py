@@ -16,7 +16,7 @@ def get_env_configs(env_name,manipulate_state):
                         
                         "n_max":20, ## number of samples used to fit gp
                         "n_info": 8, ## number of samples collected to computed local gradient
-                        "n_steps":100,
+                        "n_steps":500,
                 }
                 
         elif env_name == "Swimmer-v4":
@@ -32,7 +32,7 @@ def get_env_configs(env_name,manipulate_state):
                 env_appx_config = {
                         "n_max":32,
                         "n_info": 16,
-                        "n_steps":500,
+                        "n_steps":1000,
                 }
         
 
@@ -40,7 +40,7 @@ def get_env_configs(env_name,manipulate_state):
 
                 env_config = {
                         "n_init" : 1,
-                        "reward_scale":1000, 
+                        "reward_scale":2000, 
                         "reward_shift":-1,
                         "env_name":"Hopper-v2",
                 }
@@ -51,7 +51,7 @@ def get_env_configs(env_name,manipulate_state):
                         
                         "n_max":48,      
                         "n_info": 8,
-                        "n_steps":1000,
+                        "n_steps":2000,
                         
                 }
         
@@ -128,15 +128,24 @@ def get_configs(env_name,kernel_name,
         
         policy_config = {
                 "add_layer":[],### can be empty or [8,7] for adding 2 layers with width 8,7  neurons respectively
-                "add_bias":False,
+                "add_bias":True, ### newwww
         }
 
-        if env_name == "CartPole-v1" and not "state" in kernel_name: ## cartpole is a very noisy task
+        if env_name == "CartPole-v1": ## cartpole is a very noisy task
+        
+                # if "state" in kernel_name:
                 
-             likelihood_config = {
-                "noise_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.5,b=0.501),
-                "noise_constraint":gpytorch.constraints.constraints.Interval(0.5,0.501)
-                }
+                #         likelihood_config = {
+                #                 "noise_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.01,b=0.101),
+                #                 "noise_constraint":gpytorch.constraints.constraints.Interval(0.01,0.101)
+                #                 }
+                
+                # else :
+
+                        likelihood_config = {
+                                "noise_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.5,b=0.505),
+                                "noise_constraint":gpytorch.constraints.constraints.Interval(0.5,0.505)
+                                }
              
         else : 
                 likelihood_config = {
@@ -156,8 +165,6 @@ def get_configs(env_name,kernel_name,
                 kernel_config.update({
                         "lengthscale_hyperprior":gpytorch.priors.torch_priors.GammaPrior(1.25,0.25), ## 1.5,0.5
                         #"lengthscale_constraint":gpytorch.constraints.constraints.Interval(0.1,10),
-                        # "outputscale_hyperprior":gpytorch.priors.torch_priors.NormalPrior(loc=2.0,scale=1.0),
-                        # "outputscale_constraint":gpytorch.constraints.constraints.GreaterThan(0.01),
                         "outputscale_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.01,b=2),
                         "outputscale_constraint":gpytorch.constraints.constraints.Interval(0.01,2), #0.1 seems to be working fine :o                        
                 })
@@ -176,13 +183,15 @@ def get_configs(env_name,kernel_name,
         }
 
 
+        lr = 1 if "CartPole" in env_name else 0.5
+
         optimizer_config = {
                 "n_eval":2,
                 ### for GIBO
                 "n_max":env_appx_config["n_max"], 
                 "n_info_samples":env_appx_config["n_info"],
                 "delta":0.1, ## default is 0.1
-                "learning_rate":0.5, ## default is 0.5, we used 0.1 for ablation
+                "learning_rate":lr/5 if ("state" in kernel_name and norm_grad) else lr, ## default is 0.5, we used 0.1 for ablation
                 "confidence_gradient":conf_grad,
                 "normalize_gradient":norm_grad,
                 "adaptive_lr":adaptive_lr,

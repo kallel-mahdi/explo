@@ -185,7 +185,7 @@ class GIBOptimizer(object):
                 #self.trainer.log(self.n_samples,{"acq_diff":acq_value-acq_value_old})
             
             
-            #self.log_sample_info(new_x)
+            self.log_sample_info(objective_env,new_x)
             acq_value_old = acq_value
         
         self.trainer.log(self.n_samples,{"acq_value (after finish)":acq_value})
@@ -355,18 +355,25 @@ class GIBOptimizer(object):
             })
             
         self.trainer.log(self.n_samples,dct)
+
+
     
-    def log_sample_info(self,new_x):
+    def log_sample_info(self,objective_env,new_x):
         
         theta_i = self.theta_i
-        
+        mlp = objective_env.mlp
         kernel_states = self.model.covar_module.states
-        a1 = self.model.covar_module.run_parameters(new_x,kernel_states).squeeze().T
-        a2 = self.model.covar_module.run_parameters(theta_i,kernel_states).squeeze().T
+
+        a1 = mlp(kernel_states,new_x).flatten(start_dim=-2).squeeze().T
+        a2 = mlp(kernel_states,theta_i).flatten(start_dim=-2).squeeze().T
+
+        # print("aaaaaaaaaaaaaaaaa")
+        # print(a1.shape,a2.shape)
+        # print(a1[0])
         
-        param_distance_to_local = torch.linalg.norm(theta_i-new_x)
+        param_distance_to_local = torch.abs(theta_i-new_x).mean()
         n = a1.shape[0]
-        action_distance_to_local = (torch.linalg.norm(a1-a2)**2 )/n
+        action_distance_to_local = torch.abs(a1.double()-a2.double()).mean()
         
         
         self.trainer.log(self.n_samples,{

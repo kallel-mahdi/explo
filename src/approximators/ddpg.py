@@ -132,7 +132,7 @@ class DDPG(DeepAC):
             return q
 
 
-    def fit_critic(self,n_epochs=10):
+    def fit_critic(self,n_epochs=100):
         
         
         

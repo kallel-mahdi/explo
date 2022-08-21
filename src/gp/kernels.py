@@ -45,6 +45,10 @@ class MyRBFKernel(ScaleKernel):
         if outputscale_hyperprior is not None:
             self.outputscale = outputscale_hyperprior.mean  
 
+        
+        ## Used only for logging purpouses
+        self.states = None 
+
             
         
     def forward(self,x1,x2,**params):
@@ -52,6 +56,17 @@ class MyRBFKernel(ScaleKernel):
         rslt = super().forward(x1,x2,**params)
         
         return rslt
+
+    
+        
+    def set_train_data(self,new_s):
+        
+        self.states = new_s
+    
+    def append_train_data(self,new_s):
+
+        pass
+        
 
 
 
@@ -82,17 +97,7 @@ class StateKernel:
         self.n_actions = None 
 
     
-    def set_train_data(self,train_s):
-        """ sometimes we need to reset the states used by the kernel
-        This usually requires re insantiating the base kernel (RBF or Linear ..) """
-            
-        self.build_kernel(**self.kernel_config,train_s=train_s)
-        
-        
-    def append_train_data(self,new_s):
-        
-        pass
-        
+  
 
     def build_kernel(self,**kwargs):
         
@@ -120,7 +125,7 @@ class RBFStateKernel(MyRBFKernel,StateKernel):
                          mlp,train_s,**kwargs):
             
     
-            ard_num_dims  = train_s.shape[0] * mlp.n_actions
+            ard_num_dims  = train_s.shape[0]* mlp.n_actions
             MyRBFKernel.__init__(self,ard_num_dims,use_ard,**kwargs)
             
             self.base_kernel.lengthscale = torch.Tensor([1.])
@@ -138,8 +143,21 @@ class RBFStateKernel(MyRBFKernel,StateKernel):
             # Compute pairwise kernel 
             norm = torch.sqrt(torch.Tensor([self.ard_num_dims]))
             kernel = super().forward(a1/norm, a2/norm, **params)
-            
-            
+
+        
             return kernel
         
+
+        def set_train_data(self,train_s):
+
+            """ sometimes we need to reset the states used by the kernel
+            This usually requires re insantiating the base kernel (RBF or Linear ..) """
+                
+            self.build_kernel(**self.kernel_config,train_s=train_s)
+            
+            
+        def append_train_data(self,new_s):
+            
+            pass
+            
     
