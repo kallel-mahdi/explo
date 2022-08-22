@@ -146,7 +146,8 @@ class EnvironmentObjective(object):
     def run_many(self, params,n_episodes):
        
         rewards = torch.tensor([0], dtype=torch.float32)
-        all_states,all_transitions = [],[]
+        all_states,all_transitions,all_rewards = [],[],[]
+        
        
         for _ in range(n_episodes):
            
@@ -155,11 +156,13 @@ class EnvironmentObjective(object):
            rewards += reward
            all_states.append(states)
            all_transitions +=(transitions)
+           all_rewards.append(reward)
         
         all_states = torch.cat(all_states)
         avg_reward = rewards/n_episodes
+        var_reward = torch.tensor(all_rewards).var()
         
-        return avg_reward,all_states,all_transitions
+        return avg_reward,all_states,all_transitions,var_reward
     
            
     def test_params(

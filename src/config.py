@@ -55,11 +55,11 @@ def get_env_configs(env_name,manipulate_state):
                         
                 }
         
-        elif env_name == "HalfCheetah-v4":
+        elif env_name == "HalfCheetah-v2":
 
                 env_config = {
                         "n_init" : 1,
-                        "reward_scale":5000,
+                        "reward_scale":1000,
                         "reward_shift":0,
                         "env_name":"HalfCheetah-v2",
                         
@@ -67,7 +67,7 @@ def get_env_configs(env_name,manipulate_state):
 
                 env_appx_config = {
                         "n_max":48,
-                        "n_info": 16,
+                        "n_info": 8,
                         "n_steps":2000,
                 }
 
@@ -163,8 +163,10 @@ def get_configs(env_name,kernel_name,
         if "state" in kernel_name:
 
                 kernel_config.update({
-                        "lengthscale_hyperprior":gpytorch.priors.torch_priors.GammaPrior(1.25,0.25), ## 1.5,0.5
+                        #"lengthscale_hyperprior":gpytorch.priors.torch_priors.GammaPrior(1.1,0.1), ## 1.5,0.5
                         #"lengthscale_constraint":gpytorch.constraints.constraints.Interval(0.1,10),
+                        "lengthscale_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.01,b=2),
+                        "lengthscale_constraint":gpytorch.constraints.constraints.Interval(0.01,2), ## constraints are loose to avoid crash
                         "outputscale_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.01,b=2),
                         "outputscale_constraint":gpytorch.constraints.constraints.Interval(0.01,2), #0.1 seems to be working fine :o                        
                 })
@@ -183,15 +185,16 @@ def get_configs(env_name,kernel_name,
         }
 
 
-        lr = 1 if "CartPole" in env_name else 0.5
+        lr = 1 if "CartPole" in env_name else 2
 
         optimizer_config = {
-                "n_eval":2,
+                "n_eval":4,
                 ### for GIBO
                 "n_max":env_appx_config["n_max"], 
                 "n_info_samples":env_appx_config["n_info"],
-                "delta":0.1, ## default is 0.1
-                "learning_rate":lr/5 if ("state" in kernel_name and norm_grad) else lr, ## default is 0.5, we used 0.1 for ablation
+                #"delta":0.2 if "Cheetah" in env_name else 0.1, ## default is 0.1
+                "delta":0.1,
+                "learning_rate": lr, ## default is 0.5, we used 0.1 for ablation
                 "confidence_gradient":conf_grad,
                 "normalize_gradient":norm_grad,
                 "adaptive_lr":adaptive_lr,

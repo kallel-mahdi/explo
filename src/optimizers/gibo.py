@@ -164,7 +164,7 @@ class GIBOptimizer(object):
 
             model.posterior(self.theta_i)  ## hotfix
             new_x,acq_value = self.sample_acqf(bounds)
-            new_y,new_s,new_transitions = objective_env(new_x,1)
+            new_y,new_s,new_transitions,var_reward = objective_env(new_x,self.n_eval)
             
             ### log the real return (not noisy)
             j = new_y
@@ -188,8 +188,12 @@ class GIBOptimizer(object):
             self.log_sample_info(objective_env,new_x)
             acq_value_old = acq_value
         
-        self.trainer.log(self.n_samples,{"acq_value (after finish)":acq_value})
-        self.trainer.log(self.n_samples,{"n_info_points":n_info})
+        
+        self.trainer.log(self.n_samples,{
+            "n_info_points":n_info,
+            "acq_value (after finish)":acq_value,
+            
+            })
 
 
     def compute_inv_hessian(self,params):
@@ -270,12 +274,12 @@ class GIBOptimizer(object):
         theta_i = self.theta_i
     
         # Evaluate current parameters
-        local_y,local_s,local_transitions = objective_env(theta_i,self.n_eval)
+        local_y,local_s,local_transitions,var_reward = objective_env(theta_i,self.n_eval)
         
         ### log the real policy return not noisy
         j = local_y
         #j,_,_ = objective_env(theta_i,5)            
-        self.trainer.log(self.n_samples,{"policy_return":j,"policy_return_at_grad":j,"episode_length":local_s.shape[0]})
+        self.trainer.log(self.n_samples,{"policy_return":j,"policy_return_at_grad":j,"episode_length":local_s.shape[0],"var_reward":var_reward})
         ###########################################
         
         model.append_train_data(theta_i,local_y, strict=False)
