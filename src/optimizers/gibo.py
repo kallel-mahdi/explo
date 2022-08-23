@@ -159,7 +159,7 @@ class GIBOptimizer(object):
         ## Optimize gradient information locally
         for i in range(self.n_info_samples):
             
-            self.n_samples += 1
+            self.n_samples += self.n_eval
             n_info += 1
 
             model.posterior(self.theta_i)  ## hotfix
@@ -244,8 +244,10 @@ class GIBOptimizer(object):
                 
                 if isinstance(self.model.covar_module,StateKernel):
 
+                    
                     inv_hessian = self.compute_inv_hessian(self.theta_i)
                     params_grad = (inv_hessian @ params_grad.T).T   
+                    params_grad = torch.nn.functional.normalize(params_grad)
 
                 else :  
 
@@ -268,13 +270,13 @@ class GIBOptimizer(object):
     def step(self,model,objective_env):
         
         
-        self.n_samples += self.n_eval
+        self.n_samples += 2*self.n_eval
         
         # Theta_i is directly updated by gradient
         theta_i = self.theta_i
     
         # Evaluate current parameters
-        local_y,local_s,local_transitions,var_reward = objective_env(theta_i,self.n_eval)
+        local_y,local_s,local_transitions,var_reward = objective_env(theta_i,2*self.n_eval)
         
         ### log the real policy return not noisy
         j = local_y

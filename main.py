@@ -31,7 +31,8 @@ def run(seed,
         norm_grad,
         conf_grad,
         advantage_mean,
-        adaptive_lr):
+        adaptive_lr,
+        lr ):
 
         #env_name = "CartPole-v1" ## Action kernel + State_norm looks very well for cartpole
         #env_name = "Swimmer-v4" ##  State_norm stabilizes training 
@@ -42,11 +43,11 @@ def run(seed,
         #kernel_name = "rbfstate" ## "rbf"
         #kernel_name = "rbf" ## "rbf"
 
-        project_name = env_name
-        run_name =  kernel_name +"_"+str(1 *manipulate_state)+ str(1 *norm_grad) + str(1 *conf_grad) + str(1 *advantage_mean)+str(1 *adaptive_lr) +"_"+ str(seed)
+        project_name = env_name+("rbfstate+un+norm")
+        run_name =  kernel_name +"_lr="+str(lr) +"_"+str(1 *manipulate_state)+ str(1 *norm_grad) + str(1 *conf_grad) + str(1 *advantage_mean)+str(1 *adaptive_lr) +"_"+ str(seed)
         env_config,policy_config,likelihood_config,kernel_config,mean_config,optimizer_config,trainer_config = get_configs(env_name,kernel_name,
         use_ard=True,manipulate_state=manipulate_state,
-        conf_grad=conf_grad,norm_grad=norm_grad,advantage_mean=advantage_mean,adaptive_lr=adaptive_lr,
+        conf_grad=conf_grad,norm_grad=norm_grad,advantage_mean=advantage_mean,adaptive_lr=adaptive_lr,lr=lr,
         wandb_logger=True,project_name=project_name,run_name=run_name)
 
         model,objective_env,optimizer = setup_experiment(env_config,mean_config,kernel_config,likelihood_config,policy_config,optimizer_config,
@@ -64,21 +65,21 @@ if __name__ == '__main__':
         wandb.setup()  
 
         
-        env_name = ["Walker2d-v3"]
+        env_name = ["Hopper-v2"]
         #env_name = ["CartPole-v1"]
-        kernel_name = ["rbf"]
-        manipulate_state = [True]
+        kernel_name = ["rbfstate"]
+        manipulate_state = [False,True]
         conf_grad = [False] ##run this for rbf
         norm_grad = [True]
         advantage_mean = [False]
         adaptive_lr = [False]
-
+        lr = [0.2]
 
         n= 10
         np.random.seed(42)
         seeds = np.random.randint(low=0,high=2**30,size=(n,))
 
-        for config in itertools.product(*[env_name,kernel_name,manipulate_state,norm_grad,conf_grad,advantage_mean,adaptive_lr]):
+        for config in itertools.product(*[env_name,kernel_name,manipulate_state,norm_grad,conf_grad,advantage_mean,adaptive_lr,lr]):
 
             
                 seeds = [ int(i) for i in seeds]

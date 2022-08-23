@@ -32,7 +32,7 @@ def get_env_configs(env_name,manipulate_state):
                 env_appx_config = {
                         "n_max":32,
                         "n_info": 16,
-                        "n_steps":1000,
+                        "n_steps":600,
                 }
         
 
@@ -118,7 +118,7 @@ def get_env_configs(env_name,manipulate_state):
 
 
 def get_configs(env_name,kernel_name,
-        use_ard,manipulate_state,conf_grad,norm_grad,advantage_mean,adaptive_lr,
+        use_ard,manipulate_state,conf_grad,norm_grad,advantage_mean,adaptive_lr,lr,
         wandb_logger=False,project_name=None,run_name=None):
 
 
@@ -163,8 +163,7 @@ def get_configs(env_name,kernel_name,
         if "state" in kernel_name:
 
                 kernel_config.update({
-                        #"lengthscale_hyperprior":gpytorch.priors.torch_priors.GammaPrior(1.1,0.1), ## 1.5,0.5
-                        #"lengthscale_constraint":gpytorch.constraints.constraints.Interval(0.1,10),
+                        #"lengthscale_hyperprior":gpytorch.priors.torch_priors.GammaPrior(1.2,0.2), ## 1.5,0.5
                         "lengthscale_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.01,b=2),
                         "lengthscale_constraint":gpytorch.constraints.constraints.Interval(0.01,2), ## constraints are loose to avoid crash
                         "outputscale_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.01,b=2),
@@ -185,10 +184,9 @@ def get_configs(env_name,kernel_name,
         }
 
 
-        lr = 1 if "CartPole" in env_name else 2
 
         optimizer_config = {
-                "n_eval":4,
+                "n_eval":1,
                 ### for GIBO
                 "n_max":env_appx_config["n_max"], 
                 "n_info_samples":env_appx_config["n_info"],
