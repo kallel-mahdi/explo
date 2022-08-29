@@ -6,7 +6,7 @@ def get_env_configs(env_name,manipulate_state):
         if env_name == "CartPole-v1":
 
                 env_config = {
-                        "n_init" : 1,
+                        
                         "reward_scale":500,
                         "reward_shift":0,
                         "env_name":"CartPole-v1",
@@ -17,12 +17,13 @@ def get_env_configs(env_name,manipulate_state):
                         "n_max":20, ## number of samples used to fit gp
                         "n_info": 8, ## number of samples collected to computed local gradient
                         "n_steps":500,
+                        "n_eval":1
                 }
                 
         elif env_name == "Swimmer-v4":
 
                 env_config = {
-                        "n_init" : 1,
+                        
                         "reward_scale":350,
                         "reward_shift":0,
                         "env_name":"Swimmer-v4",
@@ -30,19 +31,22 @@ def get_env_configs(env_name,manipulate_state):
                 }
 
                 env_appx_config = {
+                        
                         "n_max":32,
                         "n_info": 16,
                         "n_steps":600,
+                        "n_eval":1
                 }
         
 
         elif env_name == "Hopper-v2":
 
                 env_config = {
-                        "n_init" : 1,
+                        
                         "reward_scale":2000, 
                         "reward_shift":-1,
                         "env_name":"Hopper-v2",
+                        
                 }
         
     
@@ -52,30 +56,35 @@ def get_env_configs(env_name,manipulate_state):
                         "n_max":48,      
                         "n_info": 8,
                         "n_steps":2000,
+                        "n_eval":1
                         
                 }
         
         elif env_name == "HalfCheetah-v2":
 
                 env_config = {
-                        "n_init" : 1,
+
+                        
                         "reward_scale":1000,
                         "reward_shift":0,
                         "env_name":"HalfCheetah-v2",
                         
+                        
                 }
 
                 env_appx_config = {
+                        
                         "n_max":48,
                         "n_info": 8,
                         "n_steps":2000,
+                        "n_eval":2
                 }
 
         
         elif env_name == "Walker2d-v3":
     
                 env_config = {
-                        "n_init" : 1,
+                        
                         "reward_scale":1000, 
                         "reward_shift":-1,
                         "env_name":"Walker2d-v3",
@@ -87,13 +96,14 @@ def get_env_configs(env_name,manipulate_state):
                         "n_max":64,      
                         "n_info": 32,
                         "n_steps":4000,
+                        "n_eval":2,
                         
                 }
         
         elif env_name == "Ant-v4":
     
                 env_config = {
-                        "n_init" : 1,
+                        
                         "reward_scale":1000, 
                         "reward_shift":-1,
                         "env_name":"Ant-v4",
@@ -105,6 +115,7 @@ def get_env_configs(env_name,manipulate_state):
                         "n_max":80,      
                         "n_info": 40,
                         "n_steps":4000,
+                        "n_eval" : 2,
                         
                 }
 
@@ -186,7 +197,7 @@ def get_configs(env_name,kernel_name,
 
 
         optimizer_config = {
-                "n_eval":1,
+                "n_eval":env_appx_config["n_eval"], 
                 ### for GIBO
                 "n_max":env_appx_config["n_max"], 
                 "n_info_samples":env_appx_config["n_info"],

@@ -185,7 +185,7 @@ class GIBOptimizer(object):
                 #self.trainer.log(self.n_samples,{"acq_diff":acq_value-acq_value_old})
             
             
-            self.log_sample_info(objective_env,new_x)
+            self.log_sample_info(objective_env,self.theta_i,new_x,is_grad=False)
             acq_value_old = acq_value
         
         
@@ -255,6 +255,7 @@ class GIBOptimizer(object):
                     lengthscale = model.covar_module.base_kernel.lengthscale.detach()
                     params_grad = lengthscale * params_grad
             
+            
             if self.adaptive_lr :
 
                  r_variance = model.train_targets.var()
@@ -274,6 +275,7 @@ class GIBOptimizer(object):
         
         # Theta_i is directly updated by gradient
         theta_i = self.theta_i
+        old_theta_i = self.theta_i.clone().detach()
     
         # Evaluate current parameters
         local_y,local_s,local_transitions,var_reward = objective_env(theta_i,2*self.n_eval)
@@ -303,6 +305,11 @@ class GIBOptimizer(object):
 
         # Add new theta_i to history 
         self.params_history.append(theta_i.clone().detach())
+
+        # Compute distance between successive gradient points
+
+        self.log_sample_info(objective_env,self.theta_i,old_theta_i,is_grad=True)
+        
         
     
     def current_actions(self,params):
@@ -364,29 +371,36 @@ class GIBOptimizer(object):
 
 
     
-    def log_sample_info(self,objective_env,new_x):
+    def log_sample_info(self,objective_env,theta_1,theta_2,is_grad=False):
         
-        theta_i = self.theta_i
         mlp = objective_env.mlp
         kernel_states = self.model.covar_module.states
 
-        a1 = mlp(kernel_states,new_x).flatten(start_dim=-2).squeeze().T
-        a2 = mlp(kernel_states,theta_i).flatten(start_dim=-2).squeeze().T
+        a1 = mlp(kernel_states,theta_1).flatten(start_dim=-2).squeeze().T
+        a2 = mlp(kernel_states,theta_2).flatten(start_dim=-2).squeeze().T
 
-        # print("aaaaaaaaaaaaaaaaa")
-        # print(a1.shape,a2.shape)
-        # print(a1[0])
         
-        param_distance_to_local = torch.abs(theta_i-new_x).mean()
+        param_distance_to_local = torch.abs(theta_1-theta_2).mean()
         n = a1.shape[0]
         action_distance_to_local = torch.abs(a1.double()-a2.double()).mean()
         
-        
-        self.trainer.log(self.n_samples,{
-            "param_distance_to_local":param_distance_to_local,
-            "action_distance_to_local":action_distance_to_local,
-        })
 
+        if is_grad : 
+
+            self.trainer.log(self.n_samples,{
+                        "param_distance_grad":param_distance_to_local,
+                        "action_distance_grad":action_distance_to_local,
+                        })
+
+
+        else : 
+        
+            self.trainer.log(self.n_samples,{
+                "param_distance_to_local":param_distance_to_local,
+                "action_distance_to_local":action_distance_to_local,
+            })
+
+        
 
         
         

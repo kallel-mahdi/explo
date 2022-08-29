@@ -171,7 +171,7 @@ def setup_experiment(env_config,
     
     
     ### build environment and linear policy
-    n_init = env_config.pop("n_init")
+    n_init = 1  
     env = Gym(env_config["env_name"])
     mlp = setup_policy(env,policy_config)
     
