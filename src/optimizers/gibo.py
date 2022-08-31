@@ -199,14 +199,17 @@ class GIBOptimizer(object):
     def compute_inv_hessian(self,params):
         
         kernel_states = self.model.covar_module.states    
-        n_ard_dims = kernel_states.shape[0]
+        n_states = kernel_states.shape[0]
         lengthscales = self.model.covar_module.base_kernel.lengthscale.squeeze()
         
-            
+        normalized_actions = lambda params : self.current_actions(params,lengthscales)
         
-        grads = torch.autograd.functional.jacobian(self.current_actions,params).squeeze()
-        grads = ( (1/lengthscales) * grads.T).T
-        hessian = (1/n_ard_dims)*(grads.T @ grads)
+        grads = torch.autograd.functional.jacobian(normalized_actions,params)
+
+        grads = grads.squeeze()
+
+        #grads = ( (1/lengthscales) * grads.T).T
+        hessian = (1/n_states)*(grads.T @ grads)
         n = hessian.shape[0]
         hessian = hessian + 1e-3*torch.eye(n)
 
@@ -312,10 +315,13 @@ class GIBOptimizer(object):
         
         
     
-    def current_actions(self,params):
+    def current_actions(self,params,lengthscales):
         
             kernel_states = self.model.covar_module.states
-            a = self.model.covar_module.mlp(kernel_states,params).flatten()
+            a = self.model.covar_module.mlp(kernel_states,params)#.flatten()
+            a = a/ lengthscales
+            a = a.flatten()
+
             return a
 
     def fit_model_hypers(self,model):

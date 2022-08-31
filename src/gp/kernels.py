@@ -110,7 +110,7 @@ class StateKernel:
     def run_parameters(self,params_batch,states):
         
         actions = self.mlp(states,params_batch) ##[params_batch[:2],n_actions,n_states]    
-        actions = torch.flatten(actions,start_dim=-2)##[params_batch[:2],n_actions*n_states]
+        #actions = torch.flatten(actions,start_dim=-2)##[params_batch[:2],n_actions*n_states]
         
         return actions
     
@@ -125,7 +125,7 @@ class RBFStateKernel(MyRBFKernel,StateKernel):
                          mlp,train_s,**kwargs):
             
     
-            ard_num_dims  = train_s.shape[0]* mlp.n_actions
+            ard_num_dims  = train_s.shape[0]#* mlp.n_actions
             MyRBFKernel.__init__(self,ard_num_dims,use_ard,**kwargs)
             
             self.base_kernel.lengthscale = torch.Tensor([1.])
@@ -139,10 +139,24 @@ class RBFStateKernel(MyRBFKernel,StateKernel):
             #Evaluate current parameters
             a1 = self.run_parameters(x1,self.states)
             a2 = self.run_parameters(x2,self.states) 
+
+            n_actions,n_states = a1.shape[-2],a1.shape[-1]
+
+            
             
             # Compute pairwise kernel 
             norm = torch.sqrt(torch.Tensor([self.ard_num_dims]))
-            kernel = super().forward(a1/norm, a2/norm, **params)
+            #kernel = super().forward(a1/norm, a2/norm, **params)
+
+            #print(f'n_actions {n_actions} n_states {n_states}')
+            #print(f'a1 {a1.shape} a2 {a2.shape}')
+            
+            kernel = super().forward(a1[:,0,:]/norm, a2[:,0,:]/norm, **params)
+
+            #print(f'kernel {kernel.shape}')
+            for i in range(1,n_actions):
+
+                kernel *= super().forward(a1[:,i,:]/norm, a2[:,i,:]/norm, **params)
 
         
             return kernel
