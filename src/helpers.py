@@ -31,6 +31,7 @@ def get_initial_data(mlp,objective_env,n_init):
     
     ### generate initial data
     #train_x = torch.rand(n_init,mlp.len_params) ## [n_trials,n_params]
+    print("MLP LEEEEEN",mlp.len_params)
     train_x = torch.zeros(n_init,mlp.len_params) ## [n_trials,n_params]
     tmp = [objective_env.run(p) for p in train_x]
     train_y = torch.Tensor([d[0] for d in tmp]).reshape(-1)  ## [n_trials,1]
@@ -54,6 +55,8 @@ def setup_policy(env,policy_config):
     mlp = MLP(input_shape=None,output_shape=None,Ls=[n_inputs]+policy_config["add_layer"]+[n_actions],add_bias=policy_config["add_bias"])
     
     logger.warning(f'MLP dimensions : {[n_inputs] +policy_config["add_layer"] + [n_actions]}')
+
+    print("MLPPPPPPPPP SETUP",mlp.len_params)
     
     return mlp
 
@@ -86,7 +89,7 @@ def setup_agent(objective_env,
                         input_shape = actor_input_shape,
                         output_shape=actor_output_shape,
                         Ls=[actor_input_shape[0],actor_output_shape[0]],
-                        add_bias=True)
+                        add_bias=False)
 
     #actor_params = objective_env.mlp
     

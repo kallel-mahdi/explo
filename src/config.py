@@ -139,7 +139,7 @@ def get_configs(env_name,kernel_name,
         
         policy_config = {
                 "add_layer":[],### can be empty or [8,7] for adding 2 layers with width 8,7  neurons respectively
-                "add_bias":True, ### newwww
+                "add_bias":False, ### newwww
         }
 
         if env_name == "CartPole-v1": ## cartpole is a very noisy task
