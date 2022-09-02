@@ -55,7 +55,7 @@ def get_env_configs(env_name,manipulate_state):
                         
                         "n_max":48,      
                         "n_info": 8,
-                        "n_steps":2000,
+                        "n_steps":1000,
                         "n_eval":1
                         
                 }
