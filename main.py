@@ -43,7 +43,7 @@ def run(seed,
         #kernel_name = "rbfstate" ## "rbf"
         #kernel_name = "rbf" ## "rbf"
 
-        project_name = env_name+("RBF + Confidence Grad")
+        project_name = env_name+("RBF + Test Parallel")
         run_name =  kernel_name +"_lr="+str(lr) +"_"+str(1 *manipulate_state)+ str(1 *norm_grad) + str(1 *conf_grad) + str(1 *advantage_mean)+str(1 *adaptive_lr) +"_"+ str(seed)
         env_config,policy_config,likelihood_config,kernel_config,mean_config,optimizer_config,trainer_config = get_configs(env_name,kernel_name,
         use_ard=True,manipulate_state=manipulate_state,
@@ -64,13 +64,13 @@ if __name__ == '__main__':
         wandb.require("service")
         wandb.setup()  
 
-        env_name = ["Hopper-v2"]
+        env_name = ["Walker2d-v4"]
         #env_name = ["CartPole-v1"]
         kernel_name = ["rbf"]
         manipulate_state = [False]
         conf_grad = [True] ##run this for rbf
         norm_grad = [True]
-        advantage_mean = [True]
+        advantage_mean = [False]
         adaptive_lr = [False]
         lr = [0.5]
         
