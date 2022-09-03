@@ -192,13 +192,23 @@ class DEGP(MyGP):
         Returns:
             (n x D x D) The second derivative of K(x,x) w.r.t. x.
         """
-       
+
+        
+        theta = theta_t.clone()
+        theta.requires_grad = True
         theta_t2 = theta_t.clone().detach() ## hotfix otherwise 0 hessian
         ## this might be a cause of error, try to find method to compute using k(theta,theta)
-        hessian = torch.autograd.functional.hessian(func=lambda theta : self.covar_module(theta_t,theta_t2).evaluate(),
-                                                    inputs=(theta_t))
+        hessian = torch.autograd.functional.hessian(func=lambda theta : self.covar_module(theta,theta_t2).evaluate(),
+                                                    inputs=(theta))
     
         return -hessian.squeeze()
+
+            
+        # lengthscale = self.covar_module.base_kernel.lengthscale.detach()
+        # sigma_f = self.covar_module.outputscale.detach()
+        # hessian = (torch.eye(self.D, device=lengthscale.device) / lengthscale ** 2) * sigma_f
+        # print(hessian.squeeze())
+        # return hessian
     
     def get_Mx_dx(self,theta_t):
         

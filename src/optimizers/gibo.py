@@ -237,9 +237,9 @@ class GIBOptimizer(object):
             params_grad = mean_d.view(1, self.len_params)
 
 
-            if self.confidence_gradient:
+            if self.confidence_gradient :
 
-                variance_d = torch.diag(variance_d.squeeze())
+                #variance_d = torch.diag(variance_d.squeeze())
                 params_grad,fraction = sparsify(params_grad,variance_d)
                 self.trainer.log(self.n_samples,{"fraction_sparse":fraction})
 

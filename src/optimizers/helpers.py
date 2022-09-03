@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 def get_bound(n_dim,p):
 
-
+    
     dx = 0.001
     x = np.arange(0, n_dim,dx)
 
@@ -57,11 +57,11 @@ def get_bound(n_dim,p):
 #     return tmp.reshape(1,-1),fraction
 
 
-def sparsify_grad(mu,Sigma,p=0.05):
+def sparsify(mu,Sigma,p=0.01):
 
 
-    mu = mu.detach().cpu().numpy()
-    Sigma = Sigma.detach().cpu().numpy()
+    mu = mu.squeeze().detach().cpu().numpy()
+    Sigma = Sigma.squeeze().detach().cpu().numpy()
 
     n_dim = mu.shape[0]
     
@@ -74,7 +74,6 @@ def sparsify_grad(mu,Sigma,p=0.05):
     D = np.diag(1/eigvals)
     D_sqrt = np.diag(np.sqrt(1/eigvals))
     P_p = P.T@D_sqrt 
-
     
     ###################
 
@@ -89,16 +88,20 @@ def sparsify_grad(mu,Sigma,p=0.05):
 
     rslt = x.value
 
-    assert all(rslt<=mu)
+    #assert np.all((rslt<=np.abs(mu)) and (-np.abs(mu)<=rslt) )
 
-    relative_diff = abs(rslt-mu)/mu
+    relative_diff = abs(rslt-mu)/abs(mu)
+    # plt.hist(relative_diff)
+    # plt.show()
 
-    plt.hist(relative_diff)
 
-    mu_sparse = torch.tensor(mu[relative_diff<0.5]).reshape(-1,1)
+    mu[relative_diff>0.9]==0.
+    mu = torch.tensor(mu).reshape(1,-1)
 
-    sparsity = np.sum(relative_diff<0.5)/len(relative_diff)
+    
+    sparsity = np.sum(relative_diff<=0.9)/len(relative_diff)
+    print(sparsity)
 
-    return mu_sparse,sparsity
+    return mu,sparsity
 
 
