@@ -180,11 +180,8 @@ def setup_experiment(env_config,
     mlp = setup_policy(env,policy_config)
     
     ### objective env evaluates the policy episodically
-    objective_env = EnvironmentObjective(
-            env=env,
-            mlp=mlp,
-            **env_config
-            )
+    env_config.update({"mlp":mlp,"env":env})
+    objective_env = EnvironmentObjective(**env_config)
     
     train_x,train_y,train_s = get_initial_data(mlp,objective_env,n_init)
     
@@ -203,6 +200,7 @@ def setup_experiment(env_config,
                  likelihood=likelihood)
     
     optimizer = GIBOptimizer(agent,model,**optimizer_config)
+    optimizer.env_config = env_config
 
     if seed is not None :
         

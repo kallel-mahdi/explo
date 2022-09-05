@@ -10,12 +10,22 @@ from botorch.fit import fit_gpytorch_model
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from src.gp.kernels import *  # # delte later
 from src.optimizers.helpers import sparsify
+from src.environments.objective import EnvironmentObjective
+from multiprocessing import Pool
 #from torch.optim import LBFGS ## Full pytorch LBFGS implementation
+
+from copy import deepcopy
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger("ShapeLog."+__name__)
 
 
+def f(env_config,new_x,n_eval):
+
+    objective_env = EnvironmentObjective(**env_config)
+
+    return objective_env(new_x,n_eval)
+    
 
 class GradientInformation(botorch.acquisition.AnalyticAcquisitionFunction):
     '''Acquisition function to sample points for gradient information.
@@ -114,6 +124,7 @@ class GradientInformation(botorch.acquisition.AnalyticAcquisitionFunction):
 
 
 class GIBOptimizer(object):
+
         
     def __init__(self,agent,model,
                 n_eval,n_max,n_info_samples,
@@ -130,6 +141,7 @@ class GIBOptimizer(object):
         self.__dict__.update(locals())
         
         self.trainer = None ## initialized by trainer
+        self.env_config = None ## initialized by helper
         self.n_samples = 0
         self.n_grad_steps = 0
         
@@ -149,18 +161,30 @@ class GIBOptimizer(object):
             sequential=False)
         
         return new_x,acq_value
-        
+
+    
+    
+
     def optimize_information(self,objective_env,model,bounds):
         
         model.posterior(self.theta_i)  ## hotfix
         acq_pts,acq_value = self.sample_acqf(bounds)
 
-        ##############################
-        for new_x in acq_pts:
+        args = [(self.env_config,new_x.reshape(1,-1),self.n_eval) for new_x in acq_pts]
 
-            self.n_samples += self.n_eval                
-            new_x = new_x.reshape(1,-1)
-            new_y,new_s,new_transitions,var_reward = objective_env(new_x,self.n_eval)
+ 
+
+
+        with Pool(processes=3) as p:
+                        
+                        runs = p.starmap(f,args)
+                        #runs = p.starmap(lambda objective_env,new_x,n_eval : objective_env(new_x,n_eval) ,args)
+
+        ##############################
+        for new_x,(new_y,new_s,new_transitions,var_reward) in zip(acq_pts,runs):
+
+            self.n_samples += self.n_eval   
+            new_x = new_x.reshape(1,-1)             
             model.append_train_data(new_x,new_y, strict=False) 
             model.append_module_data(new_y,new_s,new_transitions)
             ##############################
@@ -243,7 +267,8 @@ class GIBOptimizer(object):
                  r_variance = model.train_targets.var()
                  params_grad = params_grad/r_variance
                 
-            
+            self.trainer.log(self.n_samples,{"gradient_norm":torch.norm(params_grad)})
+            print("gradient_norm",torch.norm(params_grad))
             theta_i.grad = -params_grad  # set gradients
             self.optimizer_torch.step()  
             self.log_grads(mean_d,variance_d,params_grad,inv_hessian) 

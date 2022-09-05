@@ -1,20 +1,28 @@
 #%cd /home/mkallel/explo/
 
+import itertools
 import logging
 import logging.config
 import os
-from multiprocessing import Pool
+
 from warnings import simplefilter
 
 import gpytorch
 import numpy as np
 import torch
-import threading
+
 import wandb
 from src.config import get_configs
 from src.helpers import setup_experiment
 from src.trainer import Trainer
-import itertools
+
+
+#from multiprocessing import Pool
+#from multiprocessing.pool import ThreadPool
+#from multiprocessing.dummy import Pool as ThreadPool
+from threading import Thread
+
+from time import sleep
 
 
 logging.config.fileConfig('logging.conf')
@@ -24,7 +32,7 @@ logger = logging.getLogger()
 simplefilter(action='ignore', category=DeprecationWarning)
 os.environ["WANDB_API_KEY"]="28996bd59f1ba2c5a8c3f2cc23d8673c327ae230"
 
-def run(seed,
+def run(seed,i,
         env_name,
         kernel_name,
         manipulate_state,
@@ -43,7 +51,8 @@ def run(seed,
         #kernel_name = "rbfstate" ## "rbf"
         #kernel_name = "rbf" ## "rbf"
 
-        project_name = env_name+("RBF + Test Parallel")
+        sleep(i*0.2)
+        project_name = env_name+("PARALLEL_CRASH")
         run_name =  kernel_name +"_lr="+str(lr) +"_"+str(1 *manipulate_state)+ str(1 *norm_grad) + str(1 *conf_grad) + str(1 *advantage_mean)+str(1 *adaptive_lr) +"_"+ str(seed)
         env_config,policy_config,likelihood_config,kernel_config,mean_config,optimizer_config,trainer_config = get_configs(env_name,kernel_name,
         use_ard=True,manipulate_state=manipulate_state,
@@ -64,7 +73,7 @@ if __name__ == '__main__':
         wandb.require("service")
         wandb.setup()  
 
-        env_name = ["Walker2d-v4"]
+        env_name = ["Swimmer-v4"]
         #env_name = ["CartPole-v1"]
         kernel_name = ["rbf"]
         manipulate_state = [False]
@@ -74,7 +83,7 @@ if __name__ == '__main__':
         adaptive_lr = [False]
         lr = [0.5]
         
-        n= 10
+        n= 5
         np.random.seed(42)
         seeds = np.random.randint(low=0,high=2**30,size=(n,))
 
@@ -83,9 +92,27 @@ if __name__ == '__main__':
             
                 seeds = [ int(i) for i in seeds]
 
-                with Pool(processes=n) as p:
-                        args = [(seed,*config) for seed in seeds]
-                        p.starmap(run, args)
+                ###############################
+
+                # with ThreadPool(processes=n) as p:
+                #         args = [(seed,*config) for seed in seeds]
+                #         p.starmap(run, args)
+
+
+                ############################### 
+
+                threads = []
+                for i in range(n):
+                        args = [seeds[i],i]+[c for c in config]
+                        t = Thread(target=run, args=args)
+                        threads.append(t)
+                        t.start()
+
+                # wait for the threads to complete
+                for t in threads:
+                        t.join()
+
+                ############################
 
                 #run(*(0,*config))
 

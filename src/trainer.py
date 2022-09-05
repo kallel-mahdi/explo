@@ -22,7 +22,8 @@ class Trainer:
         
         if wandb_logger:
             self.wb_run = wandb.init(project=project_name,name=run_name,config=wandb_config,
-            settings=wandb.Settings(start_method='spawn')
+            #settings=wandb.Settings(start_method='spawn'),
+            settings=wandb.Settings(start_method='fork'),
             ) 
         
             import os

@@ -95,12 +95,9 @@ def sparsify(mu,Sigma,p=0.01):
     # plt.show()
 
 
-    mu[relative_diff>0.9]==0.
+    mu[relative_diff>0.9]=0.
     mu = torch.tensor(mu).reshape(1,-1)
-
-    
     sparsity = np.sum(relative_diff<=0.9)/len(relative_diff)
-    print(sparsity)
 
     return mu,sparsity
 
