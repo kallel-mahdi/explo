@@ -144,7 +144,7 @@ class GIBOptimizer(object):
             q=1,  # Analytic acquisition function.
             num_restarts=10,
             raw_samples=128,
-            options={'nonnegative': True, 'batch_limit': 5},
+            options={'nonnegative': True, 'batch_limit': 5,"seed":1},
             return_best_only=True,
             sequential=False)
         

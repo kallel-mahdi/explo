@@ -144,7 +144,7 @@ class GIBOptimizer(object):
             q=self.n_info_samples,  # Analytic acquisition function.
             num_restarts=10,
             raw_samples=128,
-            options={'nonnegative': True, 'batch_limit': 5},
+            options={'nonnegative': True, 'batch_limit': 5,"seed":1},
             return_best_only=True,
             sequential=False)
         
@@ -168,6 +168,7 @@ class GIBOptimizer(object):
             j = new_y
             #j,_,_ = objective_env(new_x,5)
             self.trainer.log(self.n_samples,{"policy_return":j,"episode_length":new_s.shape[0]})
+            self.log_sample_info(objective_env,self.theta_i,new_x,is_grad=False)
 
         ##############################
         model.posterior(self.theta_i)  ## hotfix

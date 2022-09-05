@@ -28,7 +28,7 @@ class MLP(torch.nn.Module):
                 self,
                 input_shape,output_shape,
                 Ls: List[int],
-                add_bias: bool = False,
+                add_bias: bool,
                 nonlinearity: Optional[Callable] = None,
                 **kwargs
                 ):

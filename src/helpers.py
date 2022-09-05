@@ -2,6 +2,7 @@ import logging
 import logging.config
 import random
 
+import botorch
 import gpytorch
 import numpy as np
 import torch
@@ -90,7 +91,7 @@ def setup_agent(objective_env,
                         input_shape = actor_input_shape,
                         output_shape=actor_output_shape,
                         Ls=[actor_input_shape[0],actor_output_shape[0]],
-                        add_bias=False)
+                        add_bias=True)
 
     #actor_params = objective_env.mlp
     
@@ -219,6 +220,7 @@ def fix_seed(objective_env,seed):
     random.seed(seed)
     torch.manual_seed(seed)
     torch.random.manual_seed(seed)
+    botorch.utils.sampling.manual_seed(seed=seed)
     objective_env.env.seed(seed)
     
     

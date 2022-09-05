@@ -55,6 +55,9 @@ def get_env_configs(env_name,manipulate_state):
                         
                         "n_max":48,      
                         "n_info": 8,
+
+                        # "n_max":40,      
+                        # "n_info": 40,
                         "n_steps":1000,
                         "n_eval":1
                         
@@ -139,7 +142,7 @@ def get_configs(env_name,kernel_name,
         
         policy_config = {
                 "add_layer":[],### can be empty or [8,7] for adding 2 layers with width 8,7  neurons respectively
-                "add_bias":False, ### newwww
+                "add_bias":True, ### newwww
         }
 
         if env_name == "CartPole-v1": ## cartpole is a very noisy task

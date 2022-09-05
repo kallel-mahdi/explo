@@ -66,7 +66,7 @@ def sparsify(mu,Sigma,p=0.01):
     n_dim = mu.shape[0]
     
     eigvals,P = np.linalg.eigh(Sigma)
-    assert (eigvals >= 0).all()
+    #assert (eigvals >= 0).all()
 
     
     ### Square root of Sigma_inv
