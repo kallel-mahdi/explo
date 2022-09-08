@@ -96,8 +96,8 @@ def get_env_configs(env_name,manipulate_state):
 
                 env_appx_config = {
                         
-                        "n_max":64,      
-                        "n_info": 32,
+                        "n_max":80,      
+                        "n_info": 40,
                         "n_steps":4000,
                         "n_eval":2,
                         

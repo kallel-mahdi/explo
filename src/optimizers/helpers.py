@@ -1,3 +1,4 @@
+import re
 import torch
 import cvxpy as cvx
 import numpy as np
@@ -88,20 +89,26 @@ def sparsify(mu,Sigma,p=0.01):
 
     rslt = x.value
 
-    #assert np.all((rslt<=np.abs(mu)) and (-np.abs(mu)<=rslt) )
 
     relative_diff = abs(rslt-mu)/abs(mu)
-    # plt.hist(relative_diff)
-    # plt.show()
+    plt.hist(relative_diff)
+    plt.show()
 
 
-    mu[relative_diff>0.9]==0.
+    mu[relative_diff>0.9]=0.
     mu = torch.tensor(mu).reshape(1,-1)
-
-    
     sparsity = np.sum(relative_diff<=0.9)/len(relative_diff)
-    print(sparsity)
+    rslt = mu
+   
+    # rslt[np.abs(rslt)<1e-5]=0
+    # sparsity = np.sum(rslt==0)/len(rslt)
 
-    return mu,sparsity
+    # rslt = torch.tensor(rslt).float().reshape(1,-1)
+
+    print(sparsity)
+    print(rslt)
+    
+
+    return rslt,sparsity
 
 

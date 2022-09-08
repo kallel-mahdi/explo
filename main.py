@@ -44,7 +44,7 @@ def run(seed,
         #kernel_name = "rbfstate" ## "rbf"
         #kernel_name = "rbf" ## "rbf"
 
-        project_name = env_name+("RBFSTATE")
+        project_name = env_name+("RBF + SPARSE 2")
         run_name =  kernel_name+"_lr="+str(lr) +"_"+str(1 *manipulate_state)+ str(1 *norm_grad) + str(1 *conf_grad) + str(1 *advantage_mean)+str(1 *adaptive_lr) +"_"+ str(seed)
         env_config,policy_config,likelihood_config,kernel_config,mean_config,optimizer_config,trainer_config = get_configs(env_name,kernel_name,
         use_ard=True,manipulate_state=manipulate_state,
@@ -65,8 +65,7 @@ if __name__ == '__main__':
         wandb.require("service")
         wandb.setup()  
 
-        env_name = ["Hopper-v2"]
-        #env_name = ["CartPole-v1"]
+        env_name = ["Swimmer-v4"]
         kernel_name = ["rbfstate"]
         manipulate_state = [False]
         norm_grad = [True]

@@ -53,6 +53,8 @@ class MLP(torch.nn.Module):
             ]
         )
         
+        print(f'len params {len_params}')
+        print(f'weight sizes {weight_sizes}')
         n_actions = Ls[-1]
         
         if nonlinearity is None:

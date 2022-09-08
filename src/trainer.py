@@ -68,16 +68,17 @@ class Trainer:
             optimizer.step(model,objective_env)
             
             
-            if (optimizer.n_grad_steps % report_freq) == 0 and optimizer.n_grad_steps>0 :
+            if  optimizer.n_grad_steps>0 :
 
                 max = model.y_hist.max()
                 curr = model.y_hist[-1]
                 
-                last_batch= model.train_targets[-report_freq:]
+                last_batch= model.train_targets[:]
                 batch_mean = last_batch.mean()
                 batch_max  = last_batch.max()
                 model.print_train_mll()
-    
+                print(f'batch_mean {batch_mean} batch_max {batch_max}')
+                   
         self.best_x,self.best_y = model.get_best_params()
         
         
