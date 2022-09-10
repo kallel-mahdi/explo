@@ -132,6 +132,8 @@ class GIBOptimizer(object):
         self.trainer = None ## initialized by trainer
         self.n_samples = 0
         self.n_grad_steps = 0
+        self.sparse_counter = 0
+        self.max_sparse = self.n_max / self.n_info_samples
         
         print(f' Gibo will use {self.n_max} last points to fit GP and {self.n_info_samples} info samples')
     
@@ -204,6 +206,8 @@ class GIBOptimizer(object):
 
         
     def one_gradient_step(self,model,theta_i):
+
+        
         
         self.n_grad_steps +=1            
     
@@ -217,10 +221,25 @@ class GIBOptimizer(object):
             params_grad = mean_d.view(1, self.len_params)
 
 
-            if self.confidence_gradient :
+            if self.confidence_gradient:
+            
+                if self.sparse_counter < self.max_sparse :
 
-                #variance_d = torch.diag(variance_d.squeeze())
-                params_grad,fraction = sparsify(params_grad,variance_d)
+                    #variance_d = torch.diag(variance_d.squeeze())
+                    params_grad,fraction = sparsify(params_grad,variance_d)
+                    if fraction < 0.01 : 
+                        self.sparse_counter +=1
+
+                    else : 
+                        self.sparse_counter = 0
+                        
+                elif self.sparse_counter >= self.max_sparse:
+
+                    self.sparse_counter = 0
+                    fraction = -1
+                
+                
+
                 self.trainer.log(self.n_samples,{"fraction_sparse":fraction})
 
             if self.normalize_gradient:
@@ -238,6 +257,11 @@ class GIBOptimizer(object):
                     lengthscale = model.covar_module.base_kernel.lengthscale.detach()
                     params_grad = lengthscale * params_grad
             
+            ### New baseline (makes more sense)
+            else : 
+
+                params_grad = torch.nn.functional.normalize(params_grad)
+
             
             if self.adaptive_lr :
 
@@ -246,6 +270,8 @@ class GIBOptimizer(object):
                 
             
             theta_i.grad = -params_grad  # set gradients
+
+            #print("graaaaaaaad",theta_i.grad)
             self.optimizer_torch.step()  
             self.log_grads(mean_d,variance_d,params_grad,inv_hessian) 
             self.model.log_hypers(self.n_samples)

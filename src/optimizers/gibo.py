@@ -176,11 +176,11 @@ class GIBOptimizer(object):
             model.posterior(self.theta_i)  ## hotfix
             self.gradInfo.update_K_xX_dx()
 
-            if acq_value_old is not None:
+            # if acq_value_old is not None:
                 
-                if (acq_value-acq_value_old) < 1e-2:
+            #     if (acq_value-acq_value_old) < 1e-2:
                     
-                    break                
+            #         break                
             
                 #self.trainer.log(self.n_samples,{"acq_diff":acq_value-acq_value_old})
             

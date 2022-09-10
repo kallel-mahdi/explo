@@ -54,7 +54,7 @@ def get_env_configs(env_name,manipulate_state):
                 env_appx_config = {
                         
                         "n_max":48,      
-                        "n_info": 8,
+                        "n_info":8,
 
                         # "n_max":40,      
                         # "n_info": 40,
@@ -142,7 +142,7 @@ def get_configs(env_name,kernel_name,
         
         policy_config = {
                 "add_layer":[],### can be empty or [8,7] for adding 2 layers with width 8,7  neurons respectively
-                "add_bias":True, ### newwww
+                "add_bias":False, ### newwww
         }
 
         if env_name == "CartPole-v1": ## cartpole is a very noisy task
@@ -180,8 +180,8 @@ def get_configs(env_name,kernel_name,
                         #"lengthscale_hyperprior":gpytorch.priors.torch_priors.GammaPrior(1.2,0.2), ## 1.5,0.5
                         "lengthscale_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.01,b=2),
                         "lengthscale_constraint":gpytorch.constraints.constraints.Interval(0.01,2), ## constraints are loose to avoid crash
-                        "outputscale_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.01,b=2),
-                        "outputscale_constraint":gpytorch.constraints.constraints.Interval(0.01,2), #0.1 seems to be working fine :o                        
+                        "outputscale_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.1,b=10),
+                        "outputscale_constraint":gpytorch.constraints.constraints.Interval(0.1,10), #0.1 seems to be working fine :o                        
                 })
                 
         else :

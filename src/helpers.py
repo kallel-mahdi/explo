@@ -21,8 +21,8 @@ from src.environments.objective import EnvironmentObjective
 from src.gp.gp import DEGP, MyGP
 from src.gp.kernels import *
 from src.gp.means import *
-#from src.optimizers.gibo import GIBOptimizer
-from src.optimizers.gibo_parallel import GIBOptimizer
+from src.optimizers.gibo import GIBOptimizer
+#from src.optimizers.gibo_parallel import GIBOptimizer
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger("MathLog."+__name__)
@@ -62,7 +62,7 @@ def setup_policy(env,policy_config):
     
     return mlp
 
-def setup_agent(objective_env,
+def setup_agent(objective_env,policy_config,
     initial_replay_size = 500,
     max_replay_size = 72000,
     n_features = 80,
@@ -91,7 +91,7 @@ def setup_agent(objective_env,
                         input_shape = actor_input_shape,
                         output_shape=actor_output_shape,
                         Ls=[actor_input_shape[0],actor_output_shape[0]],
-                        add_bias=True)
+                        add_bias=policy_config["add_bias"])
 
     #actor_params = objective_env.mlp
     
@@ -190,7 +190,7 @@ def setup_experiment(env_config,
     train_x,train_y,train_s = get_initial_data(mlp,objective_env,n_init)
     
     
-    agent = setup_agent(objective_env)
+    agent = setup_agent(objective_env,policy_config)
     covar_module = setup_kernel(kernel_config,agent,train_s=train_s)
     mean_module = setup_mean(mean_config,agent)
     

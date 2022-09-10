@@ -199,16 +199,11 @@ class DEGP(MyGP):
         theta_t2 = theta_t.clone().detach() ## hotfix otherwise 0 hessian
         ## this might be a cause of error, try to find method to compute using k(theta,theta)
         hessian = torch.autograd.functional.hessian(func=lambda theta : self.covar_module(theta,theta_t2).evaluate(),
-                                                    inputs=(theta))
+                                                    inputs=(theta)).squeeze()
     
-        return -hessian.squeeze()
+        return -hessian
 
             
-        # lengthscale = self.covar_module.base_kernel.lengthscale.detach()
-        # sigma_f = self.covar_module.outputscale.detach()
-        # hessian = (torch.eye(self.D, device=lengthscale.device) / lengthscale ** 2) * sigma_f
-        # print(hessian.squeeze())
-        # return hessian
     
     def get_Mx_dx(self,theta_t):
         

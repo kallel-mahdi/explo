@@ -59,10 +59,10 @@ class Trainer:
 
                 n_old = deepcopy(optimizer.n_samples)
 
-                if self.wandb_logger :
+                # if self.wandb_logger :
                 
-                    print(f'{self.wb_run.name} : n_samples : {optimizer.n_samples}')
-            
+                #     print(f'{self.wb_run.name} : n_samples : {optimizer.n_samples}')
+
             
             
             optimizer.step(model,objective_env)
