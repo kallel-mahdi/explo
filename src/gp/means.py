@@ -68,13 +68,27 @@ class AdvantageMean(Mean):
             local_actions = self.agent._actor_approximator(self.local_states,local_params).squeeze(axis=0).T ## [n_params,n_actions,n_states].squeeze().T
             actions = self.agent._actor_approximator(self.local_states,params).T
 
-            local_q = agent._critic_approximator(self.local_states, local_actions, output_tensor=True, **agent._critic_predict_params)
+            ###
+
+
+            for model in agent._critic_approximator.model._model :
+                model.network.eval()
+                
+            
+            local_q = agent._critic_approximator(self.local_states, local_actions, output_tensor=True,**agent._critic_predict_params)
             q = [agent._critic_approximator(self.local_states, a.T, output_tensor=True, **agent._critic_predict_params)
                 
                 for a in actions.T]
             
+            
             q = torch.vstack(q)
+
+
+            for model in agent._critic_approximator.model._model :
+                model.network.train()
+                
                         
+            
             return self.constant + torch.mean(q-local_q,axis=-1)
             
         
@@ -87,10 +101,19 @@ class AdvantageMean(Mean):
         actor = self.agent._actor_approximator.model.network
         
         #local_actions = self.agent._actor_approximator(self.local_states,theta_t).squeeze().T
+        
+
         local_actions = actor(self.local_states,theta_t).squeeze(dim=0).T
+
+        for model in agent._critic_approximator.model._model :
+            model.network.eval()
+
         local_q = agent._critic_approximator(self.local_states, local_actions,idx=0, output_tensor=True, **agent._critic_predict_params)
         #local_q = agent._target_critic_approximator(self.local_states, local_actions, output_tensor=True, **agent._critic_predict_params)
         #local_q = agent._target_critic_approximator(self.local_states, local_actions,idx=0,output_tensor=True, **agent._critic_predict_params)
+
+        for model in agent._critic_approximator.model._model :
+            model.network.train()
         
         return torch.mean(local_q)
     

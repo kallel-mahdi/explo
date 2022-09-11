@@ -32,8 +32,8 @@ def get_env_configs(env_name,manipulate_state):
 
                 env_appx_config = {
                         
-                        "n_max":32,
-                        "n_info": 16,
+                        "n_max":16,
+                        "n_info": 8,
                         "n_steps":600,
                         "n_eval":1
                 }
@@ -46,14 +46,14 @@ def get_env_configs(env_name,manipulate_state):
                         "reward_scale":2000, 
                         "reward_shift":-1,
                         "env_name":"Hopper-v2",
-                        
+                    
                 }
         
     
 
                 env_appx_config = {
                         
-                        "n_max":48,      
+                        "n_max":16,      
                         "n_info":8,
 
                         # "n_max":40,      

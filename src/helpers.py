@@ -21,8 +21,8 @@ from src.environments.objective import EnvironmentObjective
 from src.gp.gp import DEGP, MyGP
 from src.gp.kernels import *
 from src.gp.means import *
-from src.optimizers.gibo import GIBOptimizer
-#from src.optimizers.gibo_parallel import GIBOptimizer
+#from src.optimizers.gibo import GIBOptimizer
+from src.optimizers.gibo_parallel import GIBOptimizer
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger("MathLog."+__name__)

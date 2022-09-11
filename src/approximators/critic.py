@@ -14,6 +14,8 @@ class CriticNetwork(nn.Module):
         self._h1 = nn.Linear(n_input, n_features)
         self._h2 = nn.Linear(n_features, n_features)
         self._h3 = nn.Linear(n_features, n_output)
+        self._ln1 = nn.LayerNorm(n_input)
+        self._ln2 = nn.LayerNorm(n_features)
 
         nn.init.xavier_uniform_(self._h1.weight,
                                 gain=nn.init.calculate_gain('relu'))
@@ -24,7 +26,10 @@ class CriticNetwork(nn.Module):
 
     def forward(self, state, action):
         state_action = torch.cat((state.float(), action.float()), dim=1)
+
+        features1 = self._ln1(state_action)
         features1 = F.relu(self._h1(state_action))
+        features2 = self._ln2(features1)
         features2 = F.relu(self._h2(features1))
         q = self._h3(features2)
 
