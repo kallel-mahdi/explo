@@ -142,7 +142,7 @@ class GIBOptimizer(object):
             acq_function=self.gradInfo,
             bounds=bounds,
             q=1,  # Analytic acquisition function.
-            num_restarts=10,
+            num_restarts=self.n_info_samples*5,
             raw_samples=128,
             options={'nonnegative': True, 'batch_limit': 5,"seed":1},
             return_best_only=True,
