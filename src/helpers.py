@@ -65,7 +65,7 @@ def setup_policy(env,policy_config):
 def setup_agent(objective_env,policy_config,
     initial_replay_size = 500,
     max_replay_size = 72000,
-    n_features = 80,
+    n_features = 256,
     tau = .99 ##used to be 0.99
     ):
     
@@ -90,7 +90,7 @@ def setup_agent(objective_env,policy_config,
     actor_params = dict(network=MLP,
                         input_shape = actor_input_shape,
                         output_shape=actor_output_shape,
-                        Ls=[actor_input_shape[0],actor_output_shape[0]],
+                        Ls=[actor_input_shape[0]]+policy_config["add_layer"]+[actor_output_shape[0]],
                         add_bias=policy_config["add_bias"])
 
     #actor_params = objective_env.mlp
@@ -115,9 +115,13 @@ def setup_agent(objective_env,policy_config,
                         n_features=n_features,
                         input_shape=critic_input_shape,
                         output_shape=(1,),
-                        #batch_size = 1000, ## new
+                        batch_size = 1000, ## new
                         )
 
+
+    print("MDP INFOOOOOO",mdp.info.gamma)
+    print("MDP INFOOOOOO",mdp.info.gamma)
+    print("MDP INFOOOOOO",mdp.info.gamma)
 
     agent = TD3(mdp.info, policy_class,policy_params,
                 actor_params, actor_optimizer, 

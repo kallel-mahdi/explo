@@ -159,8 +159,8 @@ class DDPG(DeepAC):
         self._update_target(self._critic_approximator,
                             self._target_critic_approximator)
         
-        self._update_target(self._actor_approximator,
-                                self._target_actor_approximator)
+        # self._update_target(self._actor_approximator,
+        #                         self._target_actor_approximator)
 
         
         

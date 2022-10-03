@@ -210,7 +210,7 @@ class DEGP(MyGP):
         
         if  isinstance(self.mean_module,MyConstantMean):
             
-            return 0
+                return torch.zeros_like(theta_t)
         
         else : 
                 
@@ -254,10 +254,18 @@ class DEGP(MyGP):
 
 
         covar_grad = K_xX_dx @ KXX_inv @ (self.train_targets- M_x)
+
+        
+        # print(f'mean grad {mean_grad}')
+        # print(f'covar_gad {covar_grad}')
+        # print(f'diff {(self.train_targets- M_x)}')
+        # print(f' K_xX_dx {K_xX_dx} ')
         mean_d =   mean_grad + covar_grad
         
         variance_d =  Kxx_dx2 - K_xX_dx @ KXX_inv @ K_xX_dx.transpose(1, 2)
-                    
+
+    
+
         
         ### Variance can be negative (although diagonal should be positive for a PSD matrix)
         #variance_d = variance_d.clamp_min(1e-9)
@@ -274,7 +282,6 @@ class DEGP(MyGP):
         self.mean_on_covar_cos = torch.nn.functional.cosine_similarity(mean_grad,covar_grad)
         self.mean_on_covar_norm = torch.norm(mean_grad)/torch.norm(covar_grad)
 
-        
         return mean_d, variance_d
             
  

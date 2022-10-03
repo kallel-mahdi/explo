@@ -16,6 +16,11 @@ class CriticNetwork(nn.Module):
         self._h3 = nn.Linear(n_features, n_output)
         self._ln1 = nn.LayerNorm(n_input)
         self._ln2 = nn.LayerNorm(n_features)
+        self._ln3 = nn.LayerNorm(n_features)
+        self._ln4 = nn.LayerNorm(n_features)
+        # Define proportion or neurons to dropout
+        self.dropout = nn.Dropout(0.1)
+
 
         nn.init.xavier_uniform_(self._h1.weight,
                                 gain=nn.init.calculate_gain('relu'))
@@ -25,12 +30,18 @@ class CriticNetwork(nn.Module):
                                 gain=nn.init.calculate_gain('linear'))
 
     def forward(self, state, action):
-        state_action = torch.cat((state.float(), action.float()), dim=1)
 
-        features1 = self._ln1(state_action)
+        state_action = torch.cat((state.float(), action.float()), dim=1)
+        state_action = self._ln1(state_action)
+
         features1 = F.relu(self._h1(state_action))
-        features2 = self._ln2(features1)
+        features1 = self.dropout(features1)
+        features1 = self._ln2(features1)
+        
         features2 = F.relu(self._h2(features1))
+        features2 = self.dropout(features2)
+        features2 = self._ln3(features2)
+
         q = self._h3(features2)
 
         return torch.squeeze(q)

@@ -56,8 +56,9 @@ class MLP(torch.nn.Module):
         n_actions = Ls[-1]
         
         if nonlinearity is None:
-            #nonlinearity = torch.nn.ReLU()
-            nonlinearity = torch.nn.Identity()
+            nonlinearity = torch.nn.Tanh()
+            #nonlinearity = torch.nn.functional.tanh()
+            #nonlinearity = torch.nn.Identity()
         
         
         self.__dict__.update(locals())
@@ -113,8 +114,10 @@ class MLP(torch.nn.Module):
             outputs =  w_tmp + b_tmp
         
         ## no nonlinearity for last layer
-            if (i+1) < (self.n_layers) :
-                outputs = self.nonlinearity(outputs)
+            # if (i+1) < (self.n_layers) :
+            #     outputs = self.nonlinearity(outputs)
+
+            outputs = self.nonlinearity(outputs) ###remove
                 
         logger.debug(f'MLP : actions {outputs.shape}')
         return outputs
