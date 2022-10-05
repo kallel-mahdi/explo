@@ -37,10 +37,11 @@ def get_initial_data(mlp,objective_env,n_init):
     train_x = torch.zeros(n_init,mlp.len_params) ## [n_trials,n_params]
     tmp = [objective_env.run(p) for p in train_x]
     train_y = torch.Tensor([d[0] for d in tmp]).reshape(-1)  ## [n_trials,1]
-    train_s = torch.cat( [d[1] for d in tmp])  ## [n_trials,max_len,state_dim]
+    train_y_disc = torch.Tensor([d[1] for d in tmp]).reshape(-1)  ## [n_trials,1]
+    train_s = torch.cat( [d[2] for d in tmp])  ## [n_trials,max_len,state_dim]
     train_s = torch.flatten(train_s,start_dim=0,end_dim=1) ## [n_trials*max_len,state_dim]
     
-    return (train_x,train_y,train_s)
+    return (train_x,train_y,train_y_disc,train_s)
 
 def setup_policy(env,policy_config):
     
@@ -191,7 +192,7 @@ def setup_experiment(env_config,
             **env_config
             )
     
-    train_x,train_y,train_s = get_initial_data(mlp,objective_env,n_init)
+    train_x,train_y,train_y_disc,train_s = get_initial_data(mlp,objective_env,n_init)
     
     
     agent = setup_agent(objective_env,policy_config)

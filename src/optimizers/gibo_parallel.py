@@ -162,14 +162,16 @@ class GIBOptimizer(object):
 
             self.n_samples += self.n_eval                
             new_x = new_x.reshape(1,-1)
-            new_y,new_s,new_transitions,var_reward = objective_env(new_x,self.n_eval)
+            new_y,new_disc_y,new_s,new_transitions,var_reward = objective_env(new_x,self.n_eval)
             model.append_train_data(new_x,new_y, strict=False) 
             model.append_module_data(new_y,new_s,new_transitions)
             ##############################
             ### log the real return (not noisy)
             j = new_y
             #j,_,_ = objective_env(new_x,5)
-            self.trainer.log(self.n_samples,{"policy_return":j,"episode_length":new_s.shape[0]})
+            self.trainer.log(self.n_samples,{"policy_return":j,
+                                             "policy_return_disc":new_disc_y,
+                                             "episode_length":new_s.shape[0]})
             self.log_sample_info(objective_env,self.theta_i,new_x,is_grad=False)
 
         ##############################
@@ -287,12 +289,16 @@ class GIBOptimizer(object):
         old_theta_i = self.theta_i.clone().detach()
     
         # Evaluate current parameters
-        local_y,local_s,local_transitions,var_reward = objective_env(theta_i,2*self.n_eval)
+        local_y,local_disc_y,local_s,local_transitions,var_reward = objective_env(theta_i,2*self.n_eval)
         
         ### log the real policy return not noisy
         j = local_y
         #j,_,_ = objective_env(theta_i,5)            
-        self.trainer.log(self.n_samples,{"policy_return":j,"policy_return_at_grad":j,"episode_length":local_s.shape[0],"var_reward":var_reward})
+        self.trainer.log(self.n_samples,{"policy_return":j,
+                                        "policy_return_at_grad":j,
+                                        "policy_return_disc":local_disc_y,
+                                        "episode_length":local_s.shape[0],"var_reward":var_reward})
+
         ###########################################
         
         model.append_train_data(theta_i,local_y, strict=False)

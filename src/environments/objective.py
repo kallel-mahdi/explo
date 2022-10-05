@@ -30,6 +30,7 @@ class EnvironmentObjective(object):
         manipulate_state,
         reward_scale = 1.0,
         reward_shift = 0.0,
+        discount_factor = 0.99,
         *arg,**kwargs
     ):
         """Inits the translation environment to objective."""
@@ -45,8 +46,9 @@ class EnvironmentObjective(object):
             self.mlp = mlp
         
         self.horizon = env.info.horizon
-        self.timesteps = 0
+        self.gamma = torch.tensor(discount_factor)
         self.timesteps_to_reward = {}
+        self.timesteps = 0
         
         
         if manipulate_state == False:
@@ -80,10 +82,11 @@ class EnvironmentObjective(object):
         Returns:
             Cumulated reward.
         """
-        states, actions, rewards,next_states,dones,lasts = [],[],[],[],[],[]
+        states, actions, rewards,discounts,next_states,dones,lasts = [],[],[],[],[],[],[]
         r = 0
     
         next_state = self.env.reset()
+        disc = torch.tensor(1.0)
         
         for t in range(self.horizon):  # rollout
             
@@ -110,13 +113,16 @@ class EnvironmentObjective(object):
             last =  (t == (self.horizon-1)) or done
 
             
-            #states.append(self.manipulate_state(state))
             states.append(state)
             actions.append(action.detach())
             rewards.append(torch.tensor(self.manipulate_reward(reward_tmp)))
-            next_states.append(torch.tensor(next_state))
+            discounts.append(disc)
+            next_states.append(torch.tensor(self.manipulate_state(next_state))) ## next_state is not normalized !!
             dones.append(torch.tensor(done))
             lasts.append(torch.tensor(last))
+            
+            # update discount factor
+            disc *= self.gamma            
             
             
             if done:
@@ -127,6 +133,7 @@ class EnvironmentObjective(object):
         states = torch.stack(states)
         actions = torch.stack(actions)
         rewards = torch.stack(rewards)
+        discounts = torch.stack(discounts)
         next_states = torch.stack(next_states)
         dones = torch.stack(dones)
         lasts = torch.stack(lasts)
@@ -135,34 +142,36 @@ class EnvironmentObjective(object):
                         (s1.cpu().detach().numpy(),
                         a.cpu().detach().numpy(),
                         r.cpu().detach().numpy(),
+                        disc.cpu().detach().numpy(),
                         s2.cpu().detach().numpy(),
                         d.cpu().detach().numpy(),
                         l.cpu().detach().numpy(),) 
-                       for s1,a,r,s2,d,l in zip(states,actions,rewards,next_states,dones,lasts)
+                       for s1,a,r,disc,s2,d,l in zip(states,actions,rewards,discounts,next_states,dones,lasts)
                        ] 
         
-        return torch.sum(rewards),states,transitions
+        return torch.sum(rewards),torch.sum(discounts*rewards),states,transitions
     
     def run_many(self, params,n_episodes):
        
         rewards = torch.tensor([0], dtype=torch.float32)
-        all_states,all_transitions,all_rewards = [],[],[]
+        all_states,all_transitions,all_rewards,all_disc_rewards = [],[],[],[]
         
        
         for _ in range(n_episodes):
            
-           reward,states,transitions = self.run(params)
+           reward,disc_reward,states,transitions = self.run(params)
            
-           rewards += reward
            all_states.append(states)
            all_transitions +=(transitions)
            all_rewards.append(reward)
+           all_disc_rewards.append(disc_reward)
         
         all_states = torch.cat(all_states)
-        avg_reward = rewards/n_episodes
+        avg_reward = torch.mean(torch.stack(all_rewards))
+        avg_disc_reward = torch.mean(torch.stack(all_disc_rewards))
         var_reward = torch.tensor(all_rewards).var()
         
-        return avg_reward,all_states,all_transitions,var_reward
+        return avg_reward.reshape(1).float(),avg_disc_reward.reshape(1).float(),all_states,all_transitions,var_reward
     
            
     def test_params(

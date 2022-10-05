@@ -14,7 +14,7 @@ def get_env_configs(env_name,manipulate_state):
 
                 env_appx_config = {
                         
-                        "n_max":20, ## number of samples used to fit gp
+                        "n_max":16, ## number of samples used to fit gp
                         "n_info": 8, ## number of samples collected to computed local gradient
                         "n_steps":500,
                         "n_eval":1
@@ -33,7 +33,7 @@ def get_env_configs(env_name,manipulate_state):
                 env_appx_config = {
                         
                         "n_max":16,
-                        "n_info": 16,
+                        "n_info": 8,
                         "n_steps":600,
                         "n_eval":1
                 }
@@ -53,12 +53,12 @@ def get_env_configs(env_name,manipulate_state):
 
                 env_appx_config = {
                         
-                        "n_max":16,      
-                        "n_info":8,
+                        "n_max":24,      
+                        "n_info":12,
 
                         # "n_max":40,      
                         # "n_info": 40,
-                        "n_steps":1000,
+                        "n_steps":2000,
                         "n_eval":1
                         
                 }
@@ -77,8 +77,8 @@ def get_env_configs(env_name,manipulate_state):
 
                 env_appx_config = {
                         
-                        "n_max":24,
-                        "n_info": 12,
+                        "n_max":32,
+                        "n_info": 16,
                         "n_steps":10000,
                         "n_eval":2
                 }
@@ -98,7 +98,7 @@ def get_env_configs(env_name,manipulate_state):
                         
                         "n_max":64,      
                         "n_info": 32,
-                        "n_steps":4000,
+                        "n_steps":16000,
                         "n_eval":2,
                         
                 }
