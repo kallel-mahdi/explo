@@ -55,9 +55,6 @@ def get_env_configs(env_name,manipulate_state):
                         
                         "n_max":24,      
                         "n_info":12,
-
-                        # "n_max":40,      
-                        # "n_info": 40,
                         "n_steps":5000,
                         "n_eval":1
                         
@@ -132,7 +129,7 @@ def get_env_configs(env_name,manipulate_state):
 
 
 def get_configs(env_name,kernel_name,
-        use_ard,manipulate_state,conf_grad,norm_grad,advantage_mean,adaptive_lr,lr,
+        use_ard,manipulate_state,norm_grad,lr,
         wandb_logger=False,project_name=None,run_name=None):
 
 
@@ -194,7 +191,7 @@ def get_configs(env_name,kernel_name,
                 })
         
         mean_config = {
-                "advantage":advantage_mean,
+                
         }
 
 
@@ -207,9 +204,7 @@ def get_configs(env_name,kernel_name,
                 #"delta":0.2 if "Cheetah" in env_name else 0.1, ## default is 0.1
                 "delta":0.1,
                 "learning_rate": lr, ## default is 0.5, we used 0.1 for ablation
-                "confidence_gradient":conf_grad,
                 "normalize_gradient":norm_grad,
-                "adaptive_lr":adaptive_lr,
                 
         }
 

@@ -1,15 +1,10 @@
 import logging
 import logging.config
+from copy import deepcopy
 
 import torch
-### gpytorch 
 from gpytorch.kernels import RBFKernel, ScaleKernel
-
-# logging.config.fileConfig('logging.conf')
-# logger = logging.getLogger("ShapeLog."+__name__)
-
 from gpytorch.settings import debug
-from copy import deepcopy
 
 debug._set_state(False) ##hotfix to allow input dim and ard_dim to have different dimensions
 
@@ -176,4 +171,3 @@ class RBFStateKernel(MyRBFKernel,StateKernel):
         def append_train_data(self,new_s):
             
             pass
-            

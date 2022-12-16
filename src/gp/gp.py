@@ -8,7 +8,7 @@ from botorch.models.transforms.input import InputStandardize
 from botorch.models.transforms.outcome import Standardize
 from gpytorch import ExactMarginalLogLikelihood
 from gpytorch.distributions import MultivariateNormal
-from src.gp.means import MyConstantMean,AdvantageMean
+from src.gp.means import MyConstantMean
 
 from src.gp.kernels import *
 from src.gp.means import *
@@ -50,9 +50,6 @@ class MyGP(SingleTaskGP):
 
     def set_module_data(self,mean,states,transitions):
         
-        #if  isinstance(self.covar_module,StateKernel):
-            
-            
             self.mean_module.set_train_data(mean,states,transitions)
             
             self.covar_module.set_train_data(states)
@@ -100,8 +97,6 @@ class MyGP(SingleTaskGP):
     def forward(self, x):
         
         
-        logger.debug(f'x.shape {x.shape}')
-        
         with gpytorch.settings.debug(state=False):
             
             mean_x = self.mean_module(x)
@@ -127,8 +122,6 @@ class MyGP(SingleTaskGP):
             "Mean MAE" :self.mean_error,
             "R2" : self.R2,
             "R1" : self.R1,
-            "mean_on_covar_norm":self.mean_on_covar_norm,
-            "mean_on_covar_cos":self.mean_on_covar_cos,
         }
         
         
@@ -210,19 +203,7 @@ class DEGP(MyGP):
         
         if  isinstance(self.mean_module,MyConstantMean):
             
-            return 0
-        
-        else : 
-                
-                #tmp = torch.tensor(theta_t,requires_grad=True)
-                theta_t.requires_grad = True
-                out = self.mean_module.call2(theta_t)
-                Mx_dx =  torch.autograd.grad(out,theta_t)
-                theta_t.requires_grad = False
-                
-                return Mx_dx[0]
-        
-      
+            return 0   
         
     def posterior_derivative(self,theta_t):
         """Computes the posterior of the derivative of the GP w.r.t. the given test
@@ -241,11 +222,7 @@ class DEGP(MyGP):
         Kxx_dx2 = self._get_Kxx_dx2(theta_t)
         KXX_inv = self.get_KXX_inv()
         
-        with torch.enable_grad():
-            if  isinstance(self.mean_module,AdvantageMean):
-                
-                self.mean_module.fit_critic()
-                
+        
             
         M_x = self.mean_module(self.train_inputs[0])
         
@@ -263,19 +240,12 @@ class DEGP(MyGP):
         #variance_d = variance_d.clamp_min(1e-9)
         
         
-        
         y = self.train_targets 
         y_bar =y.mean()
         
         self.mean_error = torch.mean(torch.abs(self.train_targets- M_x))
         self.R2 = 1 - torch.sum((M_x-y)**2)/torch.sum((y_bar-y)**2)
         self.R1 = 1 - torch.sum(torch.abs(M_x-y))/torch.sum(torch.abs(y_bar-y))
-
-        #self.mean_on_covar_cos = torch.nn.functional.cosine_similarity(mean_grad,covar_grad)
-        #self.mean_on_covar_norm = torch.norm(mean_grad)/torch.norm(covar_grad)
-        self.mean_on_covar_cos = 0.
-        self.mean_on_covar_norm = 1.
-        
 
         
         return mean_d, variance_d

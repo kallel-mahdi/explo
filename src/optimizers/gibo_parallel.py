@@ -8,129 +8,27 @@ from numpy import var
 import torch
 from botorch.fit import fit_gpytorch_model
 from gpytorch.mlls import ExactMarginalLogLikelihood
-from src.gp.kernels import *  # # delte later
-from src.optimizers.helpers import sparsify
+from src.gp.kernels import *  
+from src.gp.acquisition import *
 #from torch.optim import LBFGS ## Full pytorch LBFGS implementation
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger("ShapeLog."+__name__)
 
-
-
-class GradientInformation(botorch.acquisition.AnalyticAcquisitionFunction):
-    '''Acquisition function to sample points for gradient information.
-
-    Attributes:
-        model: Gaussian process model that supplies the Jacobian (e.g. DerivativeExactGPSEModel).
-    '''
-
-    def __init__(self, model):
-        '''Inits acquisition function with model.'''
-        super().__init__(model)
-        
-
-    def update_theta_i(self, theta_i):
-        '''Updates the current parameters.
-
-        This leads to an update of K_xX_dx.
-
-        Args:
-            theta_i: New parameters.
-        '''
-        if not torch.is_tensor(theta_i):
-            theta_i = torch.tensor(theta_i)
-        self.theta_i = theta_i
-        self.update_K_xX_dx()
-    
-    def K_xX(self,theta_t,X_hat,kernel):
-            
-        rslt = kernel(theta_t,X_hat).evaluate()
-        
-        return rslt
-    
-    def _get_KθX_dθ(self, theta_t, X_hat,kernel) :
-        
-        '''Computes the analytic derivative of the kernel K(x,X) w.r.t. x.
-
-        Args:
-            x: (n x D) Test points.
-
-        Returns:
-            (n x D) The derivative of K(x,X) w.r.t. x.
-        '''
-        f  = lambda theta : self.K_xX(theta,X_hat,kernel)
-        jacobs = torch.autograd.functional.jacobian(func=f,inputs=(theta_t))
-        KθX_dθ = jacobs.sum(dim=2).transpose(1,2)
-
-        return KθX_dθ
-
-    def update_K_xX_dx(self):
-        
-        '''When new x is given update K_xX_dx.'''
-        # Pre-compute large part of K_xX_dx.
-        # X = self.model.train_inputs[0]
-        # x = self.theta_i.view(-1, self.model.D)
-        # self.K_xX_dx_part = self._get_KθX_dθ(x, X)
-        pass
-
-  
-
-   
-
-    # TODO: nicer batch-update for batch of thetas.
-    @botorch.utils.transforms.t_batch_mode_transform()
-    def forward(self, thetas) :
-        
-        '''Evaluate the acquisition function on the candidate set thetas.
-
-        Args:
-            thetas: A (q) x D-dim Tensor of (q) batches with a d-dim theta points each.
-
-        Returns:
-            A (q)-dim Tensor of acquisition function values at the given theta points.
-        '''
-        
-        
-        kernel = self.model.covar_module.get_mini_kernel(100)
-        sigma_n = self.model.likelihood.noise_covar.noise
-        D = self.model.D
-        ## does this include theta_i???
-        X = self.model.train_inputs[0] 
-        x = self.theta_i.view(-1, D)
-        variances = []
-        
-        for theta in thetas:
-            
-            theta = theta.view(-1, D)
-
-            X_hat = torch.cat([X,theta])
-            K_XX = kernel(X_hat,X_hat).evaluate() + sigma_n * torch.eye(X_hat.shape[0])
-            K_XX_inv = torch.linalg.inv(K_XX)
-
-            ### Original, taken out because trying stochastic acqf
-            #K_xθ_dx = self._get_KθX_dθ(x, theta)            
-            # K_xX_dx = torch.cat([self.K_xX_dx_part, K_xθ_dx], dim=-1)
-            
-            K_xX_dx = self._get_KθX_dθ(x, X_hat,kernel)                   
-            
-            # Compute_variance.
-            variance_d = -K_xX_dx @ K_XX_inv @ K_xX_dx.transpose(1, 2)
-            variance_d = variance_d.squeeze()
-            variances.append(torch.trace(variance_d).view(1))
-
-        return -torch.cat(variances, dim=0)
-
-
-
 class GIBOptimizer(object):
         
-    def __init__(self,agent,model,
+    def __init__(self,init_params,model,
                 n_eval,n_max,n_info_samples,
-                normalize_gradient,confidence_gradient,adaptive_lr,
+                normalize_gradient,
                 delta,learning_rate):
 
-        gradInfo = GradientInformation(model)
-        theta_i = agent._actor_approximator.model.network.default_weights.data
+        
+        if isinstance(model.covar_module,StateKernel):
+            gradInfo = StateGradientInformation(model)
+        else : 
+            gradInfo = GradientInformation(model)
+        
+        theta_i = init_params
         params_history = [theta_i.clone().detach()]
         len_params = theta_i.shape[-1]
         optimizer_torch = torch.optim.SGD([theta_i], lr=learning_rate)
@@ -199,7 +97,6 @@ class GIBOptimizer(object):
 
         grads = grads.squeeze()
 
-        #grads = ( (1/lengthscales) * grads.T).T
         hessian = (1/n_states)*(grads.T @ grads)
         n = hessian.shape[0]
         hessian = hessian + 1e-3*torch.eye(n)
@@ -215,8 +112,6 @@ class GIBOptimizer(object):
 
         
     def one_gradient_step(self,model,theta_i):
-
-        
         
         self.n_grad_steps +=1            
     
@@ -229,27 +124,6 @@ class GIBOptimizer(object):
             mean_d, variance_d = model.posterior_derivative(theta_i)
             params_grad = mean_d.view(1, self.len_params)
 
-
-            if self.confidence_gradient:
-            
-                if self.sparse_counter < self.max_sparse :
-
-                    #variance_d = torch.diag(variance_d.squeeze())
-                    params_grad,fraction = sparsify(params_grad,variance_d)
-                    if fraction < 0.01 : 
-                        self.sparse_counter +=1
-
-                    else : 
-                        self.sparse_counter = 0
-                        
-                elif self.sparse_counter >= self.max_sparse:
-
-                    self.sparse_counter = 0
-                    fraction = -1
-                
-                
-
-                self.trainer.log(self.n_samples,{"fraction_sparse":fraction})
 
             if self.normalize_gradient:
                 
@@ -270,17 +144,8 @@ class GIBOptimizer(object):
             else : 
 
                 params_grad = torch.nn.functional.normalize(params_grad)
-
-            
-            if self.adaptive_lr :
-
-                r_variance = model.train_targets.var()
-                params_grad = params_grad/r_variance
-            
-            
+     
             theta_i.grad = -params_grad  # set gradients
-
-            #print("graaaaaaaad",theta_i.grad)
             self.optimizer_torch.step()  
             self.log_grads(mean_d,variance_d,params_grad,inv_hessian) 
             self.model.log_hypers(self.n_samples)
@@ -420,8 +285,3 @@ class GIBOptimizer(object):
                 "param_distance_to_local":param_distance_to_local,
                 "action_distance_to_local":action_distance_to_local,
             })
-
-        
-
-        
-        
