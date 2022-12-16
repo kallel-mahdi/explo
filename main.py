@@ -22,8 +22,8 @@ logging.config.fileConfig('logging.conf')
 logger = logging.getLogger()
 
 simplefilter(action='ignore', category=DeprecationWarning)
-#os.environ["WANDB_API_KEY"]="28996bd59f1ba2c5a8c3f2cc23d8673c327ae230"
-os.environ["WANDB_API_KEY"]="baf5048ab2de89a0b2cea751b1b28ff2bfa4c782"
+os.environ["WANDB_API_KEY"]="28996bd59f1ba2c5a8c3f2cc23d8673c327ae230"
+#os.environ["WANDB_API_KEY"]="baf5048ab2de89a0b2cea751b1b28ff2bfa4c782"
 
 def run(seed,
         env_name,
@@ -44,8 +44,8 @@ def run(seed,
         #kernel_name = "rbfstate" ## "rbf"
         #kernel_name = "rbf" ## "rbf"
 
-        project_name = env_name+("Mean + RBFSTATE + Batch norm (critic)")
-        run_name =  kernel_name+"5_lr="+str(lr) +"_"+str(1 *manipulate_state)+ str(1 *norm_grad) + str(1 *conf_grad) + str(1 *advantage_mean)+str(1 *adaptive_lr) +"_"+ str(seed)
+        project_name = env_name+("TestRiad")
+        run_name =  kernel_name+"_lr="+str(lr) +"_"+str(1 *manipulate_state)+ str(1 *norm_grad) + str(1 *conf_grad) + str(1 *advantage_mean)+str(1 *adaptive_lr) +"_"+ str(seed)
         env_config,policy_config,likelihood_config,kernel_config,mean_config,optimizer_config,trainer_config = get_configs(env_name,kernel_name,
         use_ard=True,manipulate_state=manipulate_state,
         conf_grad=conf_grad,norm_grad=norm_grad,advantage_mean=advantage_mean,adaptive_lr=adaptive_lr,lr=lr,
@@ -65,18 +65,21 @@ if __name__ == '__main__':
         wandb.require("service")
         wandb.setup()  
 
-        env_name = ["Walker2d-v3"]
+        env_name = ["Swimmer-v4"]
         #env_name = ["CartPole-v1"]
-        kernel_name = ["rbfstate"]
-        manipulate_state = [False]
+        kernel_name = ["rbfstate"] # rbf
+        manipulate_state = [True] 
         norm_grad = [True]
-        conf_grad = [False] ##run this for rbf
-        advantage_mean = [True]
+        ##########
+        # Pas interressants pour le moment
+        conf_grad = [False] 
+        advantage_mean = [False]
         adaptive_lr = [False]
+        ##########
         learning_rate = 0.2 if kernel_name == ["rbfstate"] else 0.5
         lr = [learning_rate]
         
-        n= 10
+        n= 5
         np.random.seed(42)
         seeds = np.random.randint(low=0,high=2**30,size=(n,))
 

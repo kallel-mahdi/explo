@@ -44,7 +44,7 @@ def get_env_configs(env_name,manipulate_state):
                 env_config = {
                         
                         "reward_scale":2000, 
-                        "reward_shift":-1,
+                        "reward_shift":1,
                         "env_name":"Hopper-v2",
                     
                 }
@@ -53,12 +53,12 @@ def get_env_configs(env_name,manipulate_state):
 
                 env_appx_config = {
                         
-                        "n_max":20,      
-                        "n_info":10,
+                        "n_max":24,      
+                        "n_info":12,
 
                         # "n_max":40,      
                         # "n_info": 40,
-                        "n_steps":1000,
+                        "n_steps":5000,
                         "n_eval":1
                         
                 }
@@ -89,7 +89,7 @@ def get_env_configs(env_name,manipulate_state):
                 env_config = {
                         
                         "reward_scale":1000, 
-                        "reward_shift":-1,
+                        "reward_shift":1,
                         "env_name":"Walker2d-v3",
                 }
         
@@ -108,7 +108,7 @@ def get_env_configs(env_name,manipulate_state):
                 env_config = {
                         
                         "reward_scale":1000, 
-                        "reward_shift":-1,
+                        "reward_shift":1,
                         "env_name":"Ant-v4",
                 }
         
@@ -187,8 +187,8 @@ def get_configs(env_name,kernel_name,
         else :
 
                 kernel_config.update({
-                        "lengthscale_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.01,b=0.3),
-                        "lengthscale_constraint":gpytorch.constraints.constraints.Interval(0.01,0.3), ## constraints are loose to avoid crash
+                        "lengthscale_hyperprior":gpytorch.priors.torch_priors.UniformPrior(a=0.01,b=0.5),
+                        "lengthscale_constraint":gpytorch.constraints.constraints.Interval(0.01,0.5), ## constraints are loose to avoid crash
                         "outputscale_hyperprior":gpytorch.priors.torch_priors.NormalPrior(loc=2.0,scale=1.0),
                         "outputscale_constraint":gpytorch.constraints.constraints.GreaterThan(0.01),
                 })

@@ -52,6 +52,9 @@ class AdvantageMean(Mean):
         
         ## add local transitions again just in case
         self.agent._replay_memory.add(self.local_transitions)
+        self.agent._replay_memory.add(self.local_transitions)
+        self.agent._replay_memory.add(self.local_transitions)
+        self.agent._replay_memory.add(self.local_transitions)
         self.agent.fit_critic()
         
     def __call__(self,params):

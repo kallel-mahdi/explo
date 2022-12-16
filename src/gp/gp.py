@@ -271,8 +271,11 @@ class DEGP(MyGP):
         self.R2 = 1 - torch.sum((M_x-y)**2)/torch.sum((y_bar-y)**2)
         self.R1 = 1 - torch.sum(torch.abs(M_x-y))/torch.sum(torch.abs(y_bar-y))
 
-        self.mean_on_covar_cos = torch.nn.functional.cosine_similarity(mean_grad,covar_grad)
-        self.mean_on_covar_norm = torch.norm(mean_grad)/torch.norm(covar_grad)
+        #self.mean_on_covar_cos = torch.nn.functional.cosine_similarity(mean_grad,covar_grad)
+        #self.mean_on_covar_norm = torch.norm(mean_grad)/torch.norm(covar_grad)
+        self.mean_on_covar_cos = 0.
+        self.mean_on_covar_norm = 1.
+        
 
         
         return mean_d, variance_d

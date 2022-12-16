@@ -5,10 +5,11 @@ import torch
 ### gpytorch 
 from gpytorch.kernels import RBFKernel, ScaleKernel
 
-logging.config.fileConfig('logging.conf')
-logger = logging.getLogger("ShapeLog."+__name__)
+# logging.config.fileConfig('logging.conf')
+# logger = logging.getLogger("ShapeLog."+__name__)
 
 from gpytorch.settings import debug
+from copy import deepcopy
 
 debug._set_state(False) ##hotfix to allow input dim and ard_dim to have different dimensions
 
@@ -116,14 +117,14 @@ class RBFStateKernel(MyRBFKernel,StateKernel):
             StateKernel.__init__(self,**kwargs)
     
         def build_kernel(self,use_ard,
-                         mlp,train_s,**kwargs):
+                         mlp,train_s,train_ls=None,**kwargs):
             
     
             ard_num_dims  = train_s.shape[0]
             MyRBFKernel.__init__(self,ard_num_dims,use_ard,**kwargs)
             
-            self.base_kernel.lengthscale = torch.Tensor([1.])
-            self.outputscale = torch.Tensor([1.])
+            #self.base_kernel.lengthscale = 0.1 * torch.ones((ard_num_dims,),requires_grad=True)
+            # self.outputscale = torch.Tensor([0.1])
             self.ard_num_dims = ard_num_dims
             self.states = train_s
             self.mlp = mlp
@@ -145,7 +146,6 @@ class RBFStateKernel(MyRBFKernel,StateKernel):
 
                 kernel *= super().forward(a1[:,i,:]/norm, a2[:,i,:]/norm, **params)
 
-        
             return kernel
         
 
@@ -155,10 +155,25 @@ class RBFStateKernel(MyRBFKernel,StateKernel):
             This usually requires re insantiating the base kernel (RBF or Linear ..) """
                 
             self.build_kernel(**self.kernel_config,train_s=train_s)
+        
+        def get_mini_kernel(self,batch_size):
             
+            """Used for acquisition function to minmize optimization overhead """
+            
+            perm = torch.randperm(self.states.size(0))
+            idx = perm[:batch_size]
+            state_batch = self.states[idx]
+            ls_batch = self.base_kernel.lengthscale[0,idx]
+            
+            new_kernel = deepcopy(self)
+
+            new_kernel.build_kernel(**self.kernel_config,train_s=state_batch,train_ls=ls_batch)
+            
+            return new_kernel
+        
+       
             
         def append_train_data(self,new_s):
             
             pass
             
-    
